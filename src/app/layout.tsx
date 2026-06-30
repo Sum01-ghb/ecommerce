@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Jost } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 
 const jost = Jost({
   variable: "--font-jost",
@@ -15,6 +13,10 @@ export const metadata: Metadata = {
     "Explore the exclusive collection of high-performance Nike running, lifestyle, and basketball footwear at Nike Select Lab. Built with Next.js, Drizzle, and Zustand.",
 };
 
+/**
+ * Root HTML shell — no Navbar/Footer here.
+ * Each route group ((root), (auth)) provides its own layout.
+ */
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -23,9 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${jost.className} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-light-200 text-dark-900">
-        <Navbar />
-        <main className="flex-1 flex flex-col">{children}</main>
-        <Footer />
+        {children}
       </body>
     </html>
   );

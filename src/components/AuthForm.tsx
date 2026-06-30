@@ -1,0 +1,350 @@
+"use client";
+
+import React, { useState, useId } from "react";
+import Link from "next/link";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+import SocialProviders from "@/components/SocialProviders";
+
+/* ── Types ───────────────────────────────────────────────────── */
+
+export type AuthMode = "sign-in" | "sign-up";
+
+export interface AuthFormProps {
+  mode: AuthMode;
+  /**
+   * Called when the form is submitted with valid field values.
+   * Returning a rejected promise will surface the error message.
+   */
+  onSubmit?: (data: AuthFormData) => Promise<void>;
+}
+
+export interface AuthFormData {
+  name?: string; // sign-up only
+  email: string;
+  password: string;
+}
+
+/* ── Sub-components ──────────────────────────────────────────── */
+
+interface InputFieldProps {
+  id: string;
+  label: string;
+  type?: string;
+  value: string;
+  onChange: (v: string) => void;
+  autoComplete?: string;
+  required?: boolean;
+  error?: string;
+  placeholder?: string;
+  /** Slot rendered to the right of the input (e.g. show/hide toggle) */
+  suffix?: React.ReactNode;
+}
+
+function InputField({
+  id,
+  label,
+  type = "text",
+  value,
+  onChange,
+  autoComplete,
+  required,
+  error,
+  placeholder,
+  suffix,
+}: InputFieldProps) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-caption font-medium text-dark-900">
+        {label}
+        {required && (
+          <span aria-hidden="true" className="ml-0.5 text-red">
+            *
+          </span>
+        )}
+      </label>
+      <div className="relative">
+        <input
+          id={id}
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          autoComplete={autoComplete}
+          required={required}
+          placeholder={placeholder}
+          aria-describedby={error ? `${id}-error` : undefined}
+          aria-invalid={!!error}
+          className={`
+            w-full rounded-sm border bg-light-100 px-4 py-3
+            text-body text-dark-900 placeholder:text-dark-500
+            focus:outline-none focus:ring-2 focus:ring-dark-900 focus:ring-offset-1
+            transition-colors duration-150
+            ${suffix ? "pr-11" : ""}
+            ${error ? "border-red" : "border-light-400 hover:border-dark-500"}
+          `}
+        />
+        {suffix && (
+          <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+            {suffix}
+          </div>
+        )}
+      </div>
+      {error && (
+        <p id={`${id}-error`} role="alert" className="text-footnote text-red">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ── Divider ─────────────────────────────────────────────────── */
+
+function Divider() {
+  return (
+    <div className="relative flex items-center gap-3 my-1">
+      <span className="flex-1 border-t border-light-400" aria-hidden="true" />
+      <span className="text-footnote text-dark-500 whitespace-nowrap">or</span>
+      <span className="flex-1 border-t border-light-400" aria-hidden="true" />
+    </div>
+  );
+}
+
+/* ── Main form ───────────────────────────────────────────────── */
+
+export default function AuthForm({ mode, onSubmit }: AuthFormProps) {
+  const uid = useId();
+  const isSignUp = mode === "sign-up";
+
+  /* ── Field state ─── */
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  /* ── Error state ─── */
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [formError, setFormError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  /* ── Validation ─── */
+  function validate(): Record<string, string> {
+    const errs: Record<string, string> = {};
+    if (isSignUp && !name.trim()) errs.name = "Full name is required.";
+    if (!email.trim()) {
+      errs.email = "Email address is required.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errs.email = "Enter a valid email address.";
+    }
+    if (!password) {
+      errs.password = "Password is required.";
+    } else if (password.length < 8) {
+      errs.password = "Password must be at least 8 characters.";
+    }
+    return errs;
+  }
+
+  /* ── Submit ─── */
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setFormError(null);
+    const errs = validate();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      return;
+    }
+    setErrors({});
+    setLoading(true);
+
+    try {
+      if (onSubmit) {
+        await onSubmit({ name: isSignUp ? name : undefined, email, password });
+      }
+      setSuccess(true);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      setFormError(message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  /* ── Copy ─── */
+  const heading = isSignUp ? "Create your account" : "Welcome back";
+  const subheading = isSignUp
+    ? "Sign up to start shopping Nike."
+    : "Sign in to your Nike account.";
+  const submitLabel = isSignUp ? "Create account" : "Sign in";
+  const switchText = isSignUp ? "Already have an account?" : "Don't have an account?";
+  const switchLinkLabel = isSignUp ? "Sign in" : "Sign up";
+  const switchHref = isSignUp ? "/sign-in" : "/sign-up";
+
+  /* ── Success state ─── */
+  if (success) {
+    return (
+      <div className="text-center py-10 space-y-4" role="status" aria-live="polite">
+        <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-green/10 text-green mx-auto">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="28"
+            height="28"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
+        </div>
+        <h2 className="text-heading-3 font-medium text-dark-900">
+          {isSignUp ? "Account created!" : "Signed in!"}
+        </h2>
+        <p className="text-body text-dark-700">
+          {isSignUp
+            ? "Your account is ready. Redirecting you shortly…"
+            : "You are now signed in. Redirecting…"}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-7">
+      {/* Heading */}
+      <div className="space-y-1">
+        <h1 className="text-heading-3 font-medium text-dark-900">{heading}</h1>
+        <p className="text-body text-dark-700">{subheading}</p>
+      </div>
+
+      {/* Social providers */}
+      <SocialProviders action={isSignUp ? "Sign up" : "Sign in"} />
+
+      {/* Divider */}
+      <Divider />
+
+      {/* Email / password form */}
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
+        {/* Form-level error */}
+        {formError && (
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="rounded-sm border border-red/30 bg-red/5 px-4 py-3 text-caption text-red"
+          >
+            {formError}
+          </div>
+        )}
+
+        {/* Name (sign-up only) */}
+        {isSignUp && (
+          <InputField
+            id={`${uid}-name`}
+            label="Full name"
+            value={name}
+            onChange={setName}
+            autoComplete="name"
+            required
+            placeholder="Jordan Smith"
+            error={errors.name}
+          />
+        )}
+
+        {/* Email */}
+        <InputField
+          id={`${uid}-email`}
+          label="Email address"
+          type="email"
+          value={email}
+          onChange={setEmail}
+          autoComplete={isSignUp ? "email" : "username"}
+          required
+          placeholder="you@example.com"
+          error={errors.email}
+        />
+
+        {/* Password */}
+        <InputField
+          id={`${uid}-password`}
+          label="Password"
+          type={showPassword ? "text" : "password"}
+          value={password}
+          onChange={setPassword}
+          autoComplete={isSignUp ? "new-password" : "current-password"}
+          required
+          placeholder={isSignUp ? "At least 8 characters" : "••••••••"}
+          error={errors.password}
+          suffix={
+            <button
+              type="button"
+              onClick={() => setShowPassword((p) => !p)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              className="text-dark-500 hover:text-dark-900 focus-visible:outline-none"
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          }
+        />
+
+        {/* Forgot password link (sign-in only) */}
+        {!isSignUp && (
+          <div className="flex justify-end">
+            <Link
+              href="#"
+              className="text-footnote text-dark-700 hover:text-dark-900 hover:underline transition-colors"
+            >
+              Forgot password?
+            </Link>
+          </div>
+        )}
+
+        {/* Submit */}
+        <button
+          type="submit"
+          disabled={loading}
+          className="
+            w-full flex items-center justify-center gap-2
+            rounded-sm bg-dark-900 px-6 py-3.5
+            text-caption font-medium text-light-100
+            hover:bg-black
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900 focus-visible:ring-offset-2
+            disabled:opacity-60 disabled:cursor-not-allowed
+            transition-colors duration-150
+          "
+        >
+          {loading && <Loader2 size={15} className="animate-spin" aria-hidden="true" />}
+          {loading ? (isSignUp ? "Creating…" : "Signing in…") : submitLabel}
+        </button>
+      </form>
+
+      {/* Switch mode */}
+      <p className="text-center text-caption text-dark-700">
+        {switchText}{" "}
+        <Link
+          href={switchHref}
+          className="font-medium text-dark-900 underline underline-offset-2 hover:text-black transition-colors"
+        >
+          {switchLinkLabel}
+        </Link>
+      </p>
+
+      {/* Terms (sign-up only) */}
+      {isSignUp && (
+        <p className="text-center text-footnote text-dark-500 leading-relaxed">
+          By creating an account, you agree to Nike&apos;s{" "}
+          <Link href="#" className="underline hover:text-dark-700 transition-colors">
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link href="#" className="underline hover:text-dark-700 transition-colors">
+            Privacy Policy
+          </Link>
+          .
+        </p>
+      )}
+    </div>
+  );
+}

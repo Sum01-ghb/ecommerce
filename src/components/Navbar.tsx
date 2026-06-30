@@ -74,6 +74,14 @@ export default function Navbar() {
               Search
             </button>
 
+            {/* Sign In */}
+            <Link
+              href="/sign-in"
+              className="text-footnote font-medium text-light-300 hover:text-light-100 transition-colors duration-150"
+            >
+              Sign In
+            </Link>
+
             {/* Cart */}
             <button
               onClick={toggleCart}
@@ -198,6 +206,24 @@ export default function Navbar() {
               <button className="w-full text-left px-6 py-3.5 text-body text-light-300 hover:bg-white/5 hover:text-light-100 transition-colors border-b border-white/5">
                 Search
               </button>
+            </li>
+            <li>
+              <Link
+                href="/sign-in"
+                className="block px-6 py-3.5 text-body text-light-300 hover:bg-white/5 hover:text-light-100 transition-colors border-b border-white/5"
+                onClick={() => setMobileOpen(false)}
+              >
+                Sign In
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/sign-up"
+                className="block px-6 py-3.5 text-body text-light-300 hover:bg-white/5 hover:text-light-100 transition-colors"
+                onClick={() => setMobileOpen(false)}
+              >
+                Sign Up
+              </Link>
             </li>
           </ul>
         </nav>
