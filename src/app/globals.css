@@ -18,7 +18,7 @@
   --color-orange: #d37918;
 
   /* Font family */
-  --font-jost: "Jost", sans-serif;
+  --font-family-jost: "Jost", sans-serif;
 
   /* Heading sizes */
   --text-heading-1: 72px;
@@ -56,4 +56,71 @@
   --text-footnote: 12px;
   --text-footnote--line-height: 18px;
   --text-footnote--font-weight: 400;
+}
+
+/* Base resets */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family-jost), sans-serif;
+  background-color: var(--color-light-200);
+  color: var(--color-dark-900);
+}
+
+/* ── Custom typography utility classes ───────────────────── */
+.text-heading-1 {
+  font-size: var(--text-heading-1);
+  line-height: var(--text-heading-1--line-height);
+  font-weight: var(--text-heading-1--font-weight);
+}
+
+.text-heading-2 {
+  font-size: var(--text-heading-2);
+  line-height: var(--text-heading-2--line-height);
+  font-weight: var(--text-heading-2--font-weight);
+}
+
+@media (max-width: 768px) {
+  .text-heading-2 {
+    font-size: 36px;
+    line-height: 42px;
+  }
+}
+
+.text-heading-3 {
+  font-size: var(--text-heading-3);
+  line-height: var(--text-heading-3--line-height);
+  font-weight: var(--text-heading-3--font-weight);
+}
+
+.text-lead {
+  font-size: var(--text-lead);
+  line-height: var(--text-lead--line-height);
+  font-weight: var(--text-lead--font-weight);
+}
+
+.text-body {
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  font-weight: var(--text-body--font-weight);
+}
+
+.text-body-medium {
+  font-size: var(--text-body-medium);
+  line-height: var(--text-body-medium--line-height);
+  font-weight: var(--text-body-medium--font-weight);
+}
+
+.text-caption {
+  font-size: var(--text-caption);
+  line-height: var(--text-caption--line-height);
+  font-weight: var(--text-caption--font-weight);
+}
+
+.text-footnote {
+  font-size: var(--text-footnote);
+  line-height: var(--text-footnote--line-height);
+  font-weight: var(--text-footnote--font-weight);
 }
