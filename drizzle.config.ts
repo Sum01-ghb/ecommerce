@@ -6,7 +6,8 @@ dotenv.config({
 });
 
 export default defineConfig({
-  schema: "./src/db/schema.ts",
+  // Include both the commerce schema and the new modular auth schema
+  schema: ["./src/db/schema.ts", "./src/lib/db/schema/index.ts"],
   out: "./src/db/migrations",
   dialect: "postgresql",
   dbCredentials: {

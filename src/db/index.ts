@@ -1,11 +1,9 @@
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
-import * as schema from "./schema";
-
-// Initialize Neon SQL client with connection string
-const sql = neon(process.env.DATABASE_URL || "");
-
-// Export the Drizzle client initialized with schema
-export const db = drizzle(sql, { schema });
-export type Database = typeof db;
+/**
+ * Legacy re-export shim.
+ *
+ * Existing imports (`@/db`, `@/db/schema`) continue to work unchanged.
+ * The canonical DB client now lives in `src/lib/db/index.ts` which merges
+ * both auth schema and product schema into a single Drizzle instance.
+ */
+export { db, type Database } from "@/lib/db";
 export * from "./schema";

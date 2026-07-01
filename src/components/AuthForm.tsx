@@ -1,30 +1,26 @@
 "use client";
-
-import React, { useState, useId } from "react";
+import React, { useState, useId, useTransition } from "react";
 import Link from "next/link";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import SocialProviders from "@/components/SocialProviders";
+import { signIn, signUp } from "@/lib/auth/actions";
+import { useCartStore } from "@/store/useCartStore";
+import { useRouter } from "next/navigation";
 
-/* ── Types ───────────────────────────────────────────────────── */
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 export type AuthMode = "sign-in" | "sign-up";
 
 export interface AuthFormProps {
   mode: AuthMode;
-  /**
-   * Called when the form is submitted with valid field values.
-   * Returning a rejected promise will surface the error message.
-   */
-  onSubmit?: (data: AuthFormData) => Promise<void>;
+  callbackUrl?: string;
 }
 
-export interface AuthFormData {
-  name?: string; // sign-up only
-  email: string;
-  password: string;
-}
-
-/* ── Sub-components ──────────────────────────────────────────── */
+// ---------------------------------------------------------------------------
+// InputField sub-component
+// ---------------------------------------------------------------------------
 
 interface InputFieldProps {
   id: string;
@@ -36,8 +32,8 @@ interface InputFieldProps {
   required?: boolean;
   error?: string;
   placeholder?: string;
-  /** Slot rendered to the right of the input (e.g. show/hide toggle) */
   suffix?: React.ReactNode;
+  disabled?: boolean;
 }
 
 function InputField({
@@ -51,6 +47,7 @@ function InputField({
   error,
   placeholder,
   suffix,
+  disabled,
 }: InputFieldProps) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -62,6 +59,7 @@ function InputField({
           </span>
         )}
       </label>
+
       <div className="relative">
         <input
           id={id}
@@ -71,16 +69,20 @@ function InputField({
           autoComplete={autoComplete}
           required={required}
           placeholder={placeholder}
+          disabled={disabled}
           aria-describedby={error ? `${id}-error` : undefined}
           aria-invalid={!!error}
-          className={`
-            w-full rounded-sm border bg-light-100 px-4 py-3
-            text-body text-dark-900 placeholder:text-dark-500
-            focus:outline-none focus:ring-2 focus:ring-dark-900 focus:ring-offset-1
-            transition-colors duration-150
-            ${suffix ? "pr-11" : ""}
-            ${error ? "border-red" : "border-light-400 hover:border-dark-500"}
-          `}
+          className={[
+            "w-full rounded-sm border bg-light-100 px-4 py-3",
+            "text-body text-dark-900 placeholder:text-dark-500",
+            "focus:outline-none focus:ring-2 focus:ring-dark-900 focus:ring-offset-1",
+            "disabled:opacity-50 disabled:cursor-not-allowed",
+            "transition-colors duration-150",
+            suffix ? "pr-11" : "",
+            error ? "border-red" : "border-light-400 hover:border-dark-500",
+          ]
+            .join(" ")
+            .trim()}
         />
         {suffix && (
           <div className="absolute inset-y-0 right-0 flex items-center pr-3">
@@ -88,6 +90,7 @@ function InputField({
           </div>
         )}
       </div>
+
       {error && (
         <p id={`${id}-error`} role="alert" className="text-footnote text-red">
           {error}
@@ -97,7 +100,9 @@ function InputField({
   );
 }
 
-/* ── Divider ─────────────────────────────────────────────────── */
+// ---------------------------------------------------------------------------
+// Divider
+// ---------------------------------------------------------------------------
 
 function Divider() {
   return (
@@ -109,25 +114,36 @@ function Divider() {
   );
 }
 
-/* ── Main form ───────────────────────────────────────────────── */
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
 
-export default function AuthForm({ mode, onSubmit }: AuthFormProps) {
+export default function AuthForm({
+  mode,
+  callbackUrl = "/",
+}: AuthFormProps) {
   const uid = useId();
   const isSignUp = mode === "sign-up";
+  const [isPending, startTransition] = useTransition();
 
-  /* ── Field state ─── */
+  const router = useRouter();
+
+  // Cart items are serialised and sent to the server action for merging
+  const cartItems = useCartStore((s) => s.items);
+  const setCartItems = useCartStore((s) => s.addToCart);
+  const clearCart = useCartStore((s) => s.clearCart);
+
+  // ── Field state ──────────────────────────────────────────────────────────
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  /* ── Error state ─── */
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  // ── Error / status state ─────────────────────────────────────────────────
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
 
-  /* ── Validation ─── */
+  // ── Client-side validation (mirrors server schema) ───────────────────────
   function validate(): Record<string, string> {
     const errs: Record<string, string> = {};
     if (isSignUp && !name.trim()) errs.name = "Full name is required.";
@@ -144,73 +160,76 @@ export default function AuthForm({ mode, onSubmit }: AuthFormProps) {
     return errs;
   }
 
-  /* ── Submit ─── */
-  async function handleSubmit(e: React.FormEvent) {
+  // ── Submit handler ───────────────────────────────────────────────────────
+  async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     setFormError(null);
+
     const errs = validate();
     if (Object.keys(errs).length > 0) {
-      setErrors(errs);
+      setFieldErrors(errs);
       return;
     }
-    setErrors({});
-    setLoading(true);
+    setFieldErrors({});
 
-    try {
-      if (onSubmit) {
-        await onSubmit({ name: isSignUp ? name : undefined, email, password });
+    // Serialise guest cart so the server can merge it
+    const guestCartJson = JSON.stringify(cartItems);
+
+    startTransition(async () => {
+      if (isSignUp) {
+        const result = await signUp(
+          { name, email, password },
+          callbackUrl,
+          guestCartJson,
+        );
+        if (result && !result.success) {
+          setFormError(result.error);
+          if (result.fieldErrors) {
+            const flat: Record<string, string> = {};
+            for (const [k, v] of Object.entries(result.fieldErrors)) {
+              if (Array.isArray(v) && v.length > 0) flat[k] = v[0];
+            }
+            setFieldErrors(flat);
+          }
+        } else {
+          // Redirect handled server-side; clear cart optimistically
+          clearCart();
+        }
+      } else {
+        const result = await signIn(
+          { email, password },
+          callbackUrl,
+          guestCartJson,
+        );
+        if (result && !result.success) {
+          setFormError(result.error);
+          if (result.fieldErrors) {
+            const flat: Record<string, string> = {};
+            for (const [k, v] of Object.entries(result.fieldErrors)) {
+              if (Array.isArray(v) && v.length > 0) flat[k] = v[0];
+            }
+            setFieldErrors(flat);
+          }
+        } else {
+          clearCart();
+        }
       }
-      setSuccess(true);
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Something went wrong. Please try again.";
-      setFormError(message);
-    } finally {
-      setLoading(false);
-    }
+    });
   }
 
-  /* ── Copy ─── */
+  // ── Copy ─────────────────────────────────────────────────────────────────
   const heading = isSignUp ? "Create your account" : "Welcome back";
   const subheading = isSignUp
     ? "Sign up to start shopping Nike."
     : "Sign in to your Nike account.";
   const submitLabel = isSignUp ? "Create account" : "Sign in";
-  const switchText = isSignUp ? "Already have an account?" : "Don't have an account?";
+  const switchText = isSignUp
+    ? "Already have an account?"
+    : "Don't have an account?";
   const switchLinkLabel = isSignUp ? "Sign in" : "Sign up";
-  const switchHref = isSignUp ? "/sign-in" : "/sign-up";
-
-  /* ── Success state ─── */
-  if (success) {
-    return (
-      <div className="text-center py-10 space-y-4" role="status" aria-live="polite">
-        <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-green/10 text-green mx-auto">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="28"
-            height="28"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M20 6 9 17l-5-5" />
-          </svg>
-        </div>
-        <h2 className="text-heading-3 font-medium text-dark-900">
-          {isSignUp ? "Account created!" : "Signed in!"}
-        </h2>
-        <p className="text-body text-dark-700">
-          {isSignUp
-            ? "Your account is ready. Redirecting you shortly…"
-            : "You are now signed in. Redirecting…"}
-        </p>
-      </div>
-    );
-  }
+  const switchHref = isSignUp
+    ? `/sign-in${callbackUrl !== "/" ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ""}`
+    : `/sign-up${callbackUrl !== "/" ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ""}`;
 
   return (
     <div className="space-y-7">
@@ -249,7 +268,8 @@ export default function AuthForm({ mode, onSubmit }: AuthFormProps) {
             autoComplete="name"
             required
             placeholder="Jordan Smith"
-            error={errors.name}
+            error={fieldErrors.name}
+            disabled={isPending}
           />
         )}
 
@@ -263,7 +283,8 @@ export default function AuthForm({ mode, onSubmit }: AuthFormProps) {
           autoComplete={isSignUp ? "email" : "username"}
           required
           placeholder="you@example.com"
-          error={errors.email}
+          error={fieldErrors.email}
+          disabled={isPending}
         />
 
         {/* Password */}
@@ -276,7 +297,8 @@ export default function AuthForm({ mode, onSubmit }: AuthFormProps) {
           autoComplete={isSignUp ? "new-password" : "current-password"}
           required
           placeholder={isSignUp ? "At least 8 characters" : "••••••••"}
-          error={errors.password}
+          error={fieldErrors.password}
+          disabled={isPending}
           suffix={
             <button
               type="button"
@@ -304,7 +326,7 @@ export default function AuthForm({ mode, onSubmit }: AuthFormProps) {
         {/* Submit */}
         <button
           type="submit"
-          disabled={loading}
+          disabled={isPending}
           className="
             w-full flex items-center justify-center gap-2
             rounded-sm bg-dark-900 px-6 py-3.5
@@ -315,8 +337,10 @@ export default function AuthForm({ mode, onSubmit }: AuthFormProps) {
             transition-colors duration-150
           "
         >
-          {loading && <Loader2 size={15} className="animate-spin" aria-hidden="true" />}
-          {loading ? (isSignUp ? "Creating…" : "Signing in…") : submitLabel}
+          {isPending && (
+            <Loader2 size={15} className="animate-spin" aria-hidden="true" />
+          )}
+          {isPending ? (isSignUp ? "Creating…" : "Signing in…") : submitLabel}
         </button>
       </form>
 
@@ -335,11 +359,17 @@ export default function AuthForm({ mode, onSubmit }: AuthFormProps) {
       {isSignUp && (
         <p className="text-center text-footnote text-dark-500 leading-relaxed">
           By creating an account, you agree to Nike&apos;s{" "}
-          <Link href="#" className="underline hover:text-dark-700 transition-colors">
+          <Link
+            href="#"
+            className="underline hover:text-dark-700 transition-colors"
+          >
             Terms of Service
           </Link>{" "}
           and{" "}
-          <Link href="#" className="underline hover:text-dark-700 transition-colors">
+          <Link
+            href="#"
+            className="underline hover:text-dark-700 transition-colors"
+          >
             Privacy Policy
           </Link>
           .

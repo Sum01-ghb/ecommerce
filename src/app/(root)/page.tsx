@@ -6,6 +6,7 @@ import type { CardProps } from "@/components/Card";
 import Image from "next/image";
 import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
+import { getCurrentUser } from "@/lib/auth/actions";
 
 // ------------------------------------------------------------------
 // Static fallback data used when the DB is not yet connected
@@ -75,7 +76,8 @@ const FALLBACK_PRODUCTS: CardProps[] = [
 async function getProducts() {
   try {
     const rows = await db.select().from(products);
-    if (rows.length === 0) return { data: FALLBACK_PRODUCTS, usingFallback: true, empty: true };
+    if (rows.length === 0)
+      return { data: FALLBACK_PRODUCTS, usingFallback: true, empty: true };
     const mapped: CardProps[] = rows.map((p, i) => ({
       id: p.id,
       name: p.name,
@@ -97,11 +99,12 @@ async function getProducts() {
 // ------------------------------------------------------------------
 export default async function Home() {
   const { data, usingFallback } = await getProducts();
+  const user = await getCurrentUser();
 
   return (
     <div className="flex-1">
       {/* ── Hero ────────────────────────────────────────────────── */}
-      <section className="relative w-full min-h-[480px] md:min-h-[560px] overflow-hidden bg-light-300">
+      <section className="relative w-full min-h-120 md:min-h-140 overflow-hidden bg-light-300">
         {/* Background image */}
         <Image
           src="/hero-bg.png"
@@ -120,18 +123,19 @@ export default async function Home() {
             alt="Featured shoe"
             fill
             priority
-            className="object-contain object-right-bottom"
+            className="object-contain object-bottom-right"
           />
         </div>
 
         {/* Content */}
-        <div className="relative z-10 mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-16 h-full flex items-center py-20 sm:py-28">
+        <div className="relative z-10 mx-auto max-w-360 px-4 sm:px-6 lg:px-16 h-full flex items-center py-20 sm:py-28">
           <div className="max-w-lg">
             <p className="text-caption font-medium text-green uppercase tracking-widest mb-2">
               Bold &amp; Sports
             </p>
             <h1 className="text-heading-2 font-bold text-dark-900 leading-tight mb-4">
-              Style That Moves<br className="hidden sm:block" /> With You.
+              Style That Moves
+              <br className="hidden sm:block" /> With You.
             </h1>
             <p className="text-body text-dark-700 mb-8 max-w-sm">
               Not just style. Not just comfort. Footwear that effortlessly moves
@@ -151,14 +155,32 @@ export default async function Home() {
       {usingFallback && (
         <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-16 mt-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 rounded-sm border border-orange/40 bg-orange/5 px-4 py-3">
-            <AlertTriangle size={18} className="flex-shrink-0 text-orange mt-0.5 sm:mt-0" />
+            <AlertTriangle
+              size={18}
+              className="flex-shrink-0 text-orange mt-0.5 sm:mt-0"
+            />
             <div className="flex-1 min-w-0">
-              <p className="text-caption font-medium text-dark-900">Showing demo products</p>
+              <p className="text-caption font-medium text-dark-900">
+                Showing demo products
+              </p>
               <p className="text-footnote text-dark-700 mt-0.5">
-                Add a valid <code className="font-mono bg-light-300 px-1 rounded">DATABASE_URL</code> to{" "}
-                <code className="font-mono bg-light-300 px-1 rounded">.env</code>, then run{" "}
-                <code className="font-mono bg-light-300 px-1 rounded">npm run db:migrate</code> and{" "}
-                <code className="font-mono bg-light-300 px-1 rounded">npm run db:seed</code>.
+                Add a valid{" "}
+                <code className="font-mono bg-light-300 px-1 rounded">
+                  DATABASE_URL
+                </code>{" "}
+                to{" "}
+                <code className="font-mono bg-light-300 px-1 rounded">
+                  .env
+                </code>
+                , then run{" "}
+                <code className="font-mono bg-light-300 px-1 rounded">
+                  npm run db:migrate
+                </code>{" "}
+                and{" "}
+                <code className="font-mono bg-light-300 px-1 rounded">
+                  npm run db:seed
+                </code>
+                .
               </p>
             </div>
           </div>
@@ -166,8 +188,13 @@ export default async function Home() {
       )}
 
       {/* ── Best of Air Max ────────────────────────────────────── */}
-      <section id="collection" className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-16 py-12">
-        <h2 className="text-heading-3 font-medium text-dark-900 mb-6">Best of Air Max</h2>
+      <section
+        id="collection"
+        className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-16 py-12"
+      >
+        <h2 className="text-heading-3 font-medium text-dark-900 mb-6">
+          Best of Air Max
+        </h2>
         <div className="grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-2 md:grid-cols-3 lg:gap-x-6">
           {data.map((product) => (
             <Card key={product.id} {...product} />
@@ -177,7 +204,9 @@ export default async function Home() {
 
       {/* ── Trending Now ───────────────────────────────────────── */}
       <section className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-16 pb-16">
-        <h2 className="text-heading-3 font-medium text-dark-900 mb-6">Trending Now</h2>
+        <h2 className="text-heading-3 font-medium text-dark-900 mb-6">
+          Trending Now
+        </h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {/* Large feature card */}
           <div className="relative col-span-1 md:row-span-2 aspect-[4/3] md:aspect-auto overflow-hidden rounded-sm bg-dark-900 min-h-[300px]">
@@ -253,11 +282,13 @@ export default async function Home() {
               Bold &amp; Sports
             </p>
             <h2 className="text-heading-2 font-bold text-dark-900 uppercase mb-4">
-              Nike React<br />Presto By You
+              Nike React
+              <br />
+              Presto By You
             </h2>
             <p className="text-body text-dark-700 mb-8">
-              Take advantage of brand new, proprietary cushioning technology with a
-              fresh pair of Nike react shoes.
+              Take advantage of brand new, proprietary cushioning technology
+              with a fresh pair of Nike react shoes.
             </p>
             <Link
               href="#"
