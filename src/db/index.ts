@@ -1,9 +1,6 @@
 /**
- * Legacy re-export shim.
- *
- * Existing imports (`@/db`, `@/db/schema`) continue to work unchanged.
- * The canonical DB client now lives in `src/lib/db/index.ts` which merges
- * both auth schema and product schema into a single Drizzle instance.
+ * Legacy re-export shim — keeps existing `@/db` imports working.
+ * The canonical DB client and schema now live in `src/lib/db/`.
  */
 export { db, type Database } from "@/lib/db";
-export * from "./schema";
+export * from "@/lib/db/schema";
