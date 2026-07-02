@@ -1,6 +1,4 @@
 "use client";
-
-
 import Image from "next/image";
 import { useCartStore } from "@/store/useCartStore";
 
@@ -8,7 +6,7 @@ export type BadgeVariant = "best-seller" | "sale" | "new" | "none";
 
 export interface CardProps {
   /** Product unique id */
-  id: number;
+  id: string | number;
   /** Product name */
   name: string;
   /** Short category or sub-title, e.g. "Men's Shoes" */
@@ -68,12 +66,15 @@ export default function Card({
 
   const handleClick = onClick
     ? onClick
-    : () => addToCart({ id, name, price, imageUrl: imageSrc });
+    : () => addToCart({ id: String(id), name, price, imageUrl: imageSrc });
 
   const hasDiscount = originalPrice !== undefined && originalPrice > price;
 
   return (
-    <article className="group flex flex-col cursor-pointer" onClick={handleClick}>
+    <article
+      className="group flex flex-col cursor-pointer"
+      onClick={handleClick}
+    >
       {/* Image container */}
       <div className="relative aspect-square w-full overflow-hidden bg-light-200">
         {/* Badge */}

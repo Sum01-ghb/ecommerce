@@ -6,11 +6,11 @@ import Link from "next/link";
 import { useCartStore } from "@/store/useCartStore";
 
 const NAV_LINKS = [
-  { label: "Men", href: "#" },
-  { label: "Women", href: "#" },
-  { label: "Kids", href: "#" },
-  { label: "Collections", href: "#" },
-  { label: "Contact", href: "#" },
+  { label: "Men",         href: "/products?gender=men" },
+  { label: "Women",       href: "/products?gender=women" },
+  { label: "Kids",        href: "/products?gender=kids" },
+  { label: "Collections", href: "/products" },
+  { label: "Contact",     href: "#" },
 ];
 
 export default function Navbar() {

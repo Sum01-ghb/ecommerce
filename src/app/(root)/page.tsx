@@ -1,12 +1,13 @@
 import React from "react";
 import { db } from "@/db";
-import { products } from "@/db/schema";
+import { products, categories, productVariants, productImages } from "@/lib/db/schema";
 import Card from "@/components/Card";
 import type { CardProps } from "@/components/Card";
 import Image from "next/image";
 import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/actions";
+import { eq, and } from "drizzle-orm";
 
 // ------------------------------------------------------------------
 // Static fallback data used when the DB is not yet connected
@@ -75,15 +76,29 @@ const FALLBACK_PRODUCTS: CardProps[] = [
 // ------------------------------------------------------------------
 async function getProducts() {
   try {
-    const rows = await db.select().from(products);
+    const rows = await db
+      .select({
+        id: products.id,
+        name: products.name,
+        categoryName: categories.name,
+        price: productVariants.price,
+        imageUrl: productImages.url,
+      })
+      .from(products)
+      .leftJoin(categories, eq(products.categoryId, categories.id))
+      .leftJoin(productVariants, eq(products.defaultVariantId, productVariants.id))
+      .leftJoin(productImages, and(
+        eq(productImages.productId, products.id),
+        eq(productImages.isPrimary, true)
+      ));
     if (rows.length === 0)
       return { data: FALLBACK_PRODUCTS, usingFallback: true, empty: true };
     const mapped: CardProps[] = rows.map((p, i) => ({
       id: p.id,
       name: p.name,
-      category: p.category,
-      price: p.price,
-      imageSrc: p.imageUrl,
+      category: p.categoryName || "Uncategorized",
+      price: p.price ? Number(p.price) : 0,
+      imageSrc: p.imageUrl || "/shoes/shoe-1.jpg",
       badge: i === 0 ? "best-seller" : i < 3 ? "sale" : "none",
       discountLabel: i < 3 && i !== 0 ? "20% off" : undefined,
       colourCount: 4,
@@ -142,10 +157,10 @@ export default async function Home() {
               with your every step.
             </p>
             <Link
-              href="#collection"
+              href="/products"
               className="inline-block rounded-sm bg-dark-900 px-6 py-3 text-caption font-medium text-light-100 hover:bg-black transition-colors duration-150"
             >
-              Find Your Store
+              Shop Now
             </Link>
           </div>
         </div>
