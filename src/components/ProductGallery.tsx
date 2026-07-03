@@ -84,7 +84,7 @@ function Thumbnail({ image, index, isActive, onSelect, onKeyDown }: ThumbnailPro
       onClick={() => onSelect(index)}
       onKeyDown={(e) => onKeyDown(e, index)}
       className={`
-        relative w-16 h-16 shrink-0 overflow-hidden rounded-sm transition-all duration-150
+        relative w-16 h-16 shrink-0 overflow-hidden rounded-sm transition-all duration-150 cursor-pointer
         focus:outline-none focus-visible:ring-2 focus-visible:ring-dark-900 focus-visible:ring-offset-1
         ${isActive
           ? "ring-2 ring-dark-900"
@@ -124,7 +124,7 @@ function Swatch({ variant, isActive, onSelect }: SwatchProps) {
       aria-pressed={isActive}
       onClick={onSelect}
       className={`
-        relative w-12 h-12 overflow-hidden rounded-sm transition-all duration-150
+        relative w-12 h-12 overflow-hidden rounded-sm transition-all duration-150 cursor-pointer
         focus:outline-none focus-visible:ring-2 focus-visible:ring-dark-900 focus-visible:ring-offset-1
         ${isActive
           ? "ring-2 ring-dark-900"
@@ -282,7 +282,7 @@ export default function ProductGallery({ variants, badge }: ProductGalleryProps)
                   absolute left-2 top-1/2 -translate-y-1/2 z-10
                   w-8 h-8 flex items-center justify-center
                   rounded-full bg-light-100/80 hover:bg-light-100
-                  text-dark-900 shadow-sm transition-all duration-150
+                  text-dark-900 shadow-sm transition-all duration-150 cursor-pointer
                   disabled:opacity-30 disabled:cursor-not-allowed
                   focus:outline-none focus-visible:ring-2 focus-visible:ring-dark-900
                 "
@@ -298,7 +298,7 @@ export default function ProductGallery({ variants, badge }: ProductGalleryProps)
                   absolute right-2 top-1/2 -translate-y-1/2 z-10
                   w-8 h-8 flex items-center justify-center
                   rounded-full bg-light-100/80 hover:bg-light-100
-                  text-dark-900 shadow-sm transition-all duration-150
+                  text-dark-900 shadow-sm transition-all duration-150 cursor-pointer
                   disabled:opacity-30 disabled:cursor-not-allowed
                   focus:outline-none focus-visible:ring-2 focus-visible:ring-dark-900
                 "

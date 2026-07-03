@@ -76,10 +76,10 @@ export default function AddToCartButton({
           disabled
             ? "bg-light-300 text-dark-500 cursor-not-allowed"
             : feedback === "added"
-            ? "bg-green text-light-100"
+            ? "bg-green text-light-100 cursor-pointer"
             : feedback === "error"
-            ? "bg-red text-light-100"
-            : "bg-dark-900 text-light-100 hover:bg-black"
+            ? "bg-red text-light-100 cursor-pointer"
+            : "bg-dark-900 text-light-100 hover:bg-black cursor-pointer"
         }
       `}
     >

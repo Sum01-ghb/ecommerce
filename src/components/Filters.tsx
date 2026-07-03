@@ -51,7 +51,7 @@ function FilterGroup({ title, children, defaultOpen = true }: FilterGroupProps) 
         className="
           flex w-full items-center justify-between
           text-caption font-medium text-dark-900
-          hover:text-dark-700 transition-colors
+          hover:text-dark-700 transition-colors cursor-pointer
           focus:outline-none focus-visible:ring-1 focus-visible:ring-dark-900
         "
         aria-expanded={open}
@@ -184,7 +184,7 @@ export default function Filters({ totalCount }: FiltersProps) {
             onClick={handleClearAll}
             className="
               text-footnote text-dark-700 underline underline-offset-2
-              hover:text-dark-900 transition-colors
+              hover:text-dark-900 transition-colors cursor-pointer
               focus:outline-none focus-visible:ring-1 focus-visible:ring-dark-900
             "
           >
@@ -218,7 +218,7 @@ export default function Filters({ totalCount }: FiltersProps) {
                 onClick={() => toggle("size", opt.slug)}
                 aria-pressed={active}
                 className={`
-                  py-1.5 text-footnote border rounded-sm transition-colors
+                  py-1.5 text-footnote border rounded-sm transition-colors cursor-pointer
                   focus:outline-none focus-visible:ring-1 focus-visible:ring-dark-900
                   ${active
                     ? "bg-dark-900 text-light-100 border-dark-900"
@@ -247,7 +247,7 @@ export default function Filters({ totalCount }: FiltersProps) {
                 aria-label={c.name}
                 title={c.name}
                 className={`
-                  w-7 h-7 rounded-full border-2 transition-all duration-150
+                  w-7 h-7 rounded-full border-2 transition-all duration-150 cursor-pointer
                   focus:outline-none focus-visible:ring-2 focus-visible:ring-dark-900 focus-visible:ring-offset-1
                   ${active
                     ? "border-dark-900 scale-110 shadow-sm"
@@ -319,7 +319,7 @@ export default function Filters({ totalCount }: FiltersProps) {
           border border-light-400
           rounded-sm
           text-caption text-dark-900
-          hover:border-dark-500 transition-colors
+          hover:border-dark-500 transition-colors cursor-pointer
           focus:outline-none focus-visible:ring-1 focus-visible:ring-dark-900
         "
       >
@@ -377,7 +377,7 @@ export default function Filters({ totalCount }: FiltersProps) {
                 aria-label="Close filters"
                 className="
                   p-1.5 rounded-sm text-dark-700
-                  hover:text-dark-900 hover:bg-light-200 transition-colors
+                  hover:text-dark-900 hover:bg-light-200 transition-colors cursor-pointer
                   focus:outline-none focus-visible:ring-1 focus-visible:ring-dark-900
                 "
               >
@@ -397,7 +397,7 @@ export default function Filters({ totalCount }: FiltersProps) {
                   mt-4 w-full py-3 rounded-sm
                   bg-dark-900 text-light-100
                   text-caption font-medium
-                  hover:bg-black transition-colors
+                  hover:bg-black transition-colors cursor-pointer
                   focus:outline-none focus-visible:ring-1 focus-visible:ring-dark-900
                 "
               >

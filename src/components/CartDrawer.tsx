@@ -64,7 +64,7 @@ function DrawerItem({
       {/* Thumbnail */}
       <Link
         href={`/products/${item.productId}`}
-        className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-sm bg-light-200 block"
+        className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-sm bg-light-200 block cursor-pointer"
         aria-label={item.name}
       >
         <Image
@@ -95,7 +95,7 @@ function DrawerItem({
             <button
               onClick={() => handleQty(-1)}
               disabled={isPending}
-              className="p-1.5 text-dark-700 hover:text-dark-900 disabled:opacity-50"
+              className="p-1.5 text-dark-700 hover:text-dark-900 disabled:opacity-50 cursor-pointer"
               aria-label="Decrease quantity"
             >
               <Minus size={13} />
@@ -104,7 +104,7 @@ function DrawerItem({
             <button
               onClick={() => handleQty(1)}
               disabled={isPending || item.quantity >= item.inStock}
-              className="p-1.5 text-dark-700 hover:text-dark-900 disabled:opacity-50"
+              className="p-1.5 text-dark-700 hover:text-dark-900 disabled:opacity-50 cursor-pointer"
               aria-label="Increase quantity"
             >
               <Plus size={13} />
@@ -115,7 +115,7 @@ function DrawerItem({
           <button
             onClick={handleRemove}
             disabled={isPending}
-            className="text-dark-500 hover:text-red transition-colors disabled:opacity-50"
+            className="text-dark-500 hover:text-red transition-colors disabled:opacity-50 cursor-pointer"
             aria-label="Remove item"
           >
             <Trash2 size={16} />
@@ -164,7 +164,7 @@ export default function CartDrawer() {
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="rounded-sm p-1.5 text-dark-500 hover:bg-light-200 hover:text-dark-900 transition-colors"
+              className="rounded-sm p-1.5 text-dark-500 hover:bg-light-200 hover:text-dark-900 transition-colors cursor-pointer"
               aria-label="Close cart"
             >
               <X size={20} />
@@ -186,7 +186,7 @@ export default function CartDrawer() {
                 </div>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="rounded-sm border border-light-400 px-5 py-2.5 text-caption hover:bg-light-200 transition-colors"
+                  className="rounded-sm border border-light-400 px-5 py-2.5 text-caption hover:bg-light-200 transition-colors cursor-pointer"
                 >
                   Continue Shopping
                 </button>
@@ -216,7 +216,7 @@ export default function CartDrawer() {
                 className="
                   w-full block text-center rounded-sm border border-dark-900
                   py-3 text-caption font-medium text-dark-900
-                  hover:bg-light-200 transition-colors
+                  hover:bg-light-200 transition-colors cursor-pointer
                 "
               >
                 View Cart
@@ -229,7 +229,7 @@ export default function CartDrawer() {
                 className="
                   w-full block text-center rounded-sm bg-dark-900
                   py-3.5 text-caption font-medium text-light-100
-                  hover:bg-black transition-colors
+                  hover:bg-black transition-colors cursor-pointer
                 "
               >
                 Checkout

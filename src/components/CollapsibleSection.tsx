@@ -53,7 +53,7 @@ export default function CollapsibleSection({
           flex w-full items-center justify-between
           py-4 gap-3
           text-body-medium font-medium text-dark-900
-          hover:text-dark-700 transition-colors
+          hover:text-dark-700 transition-colors cursor-pointer
           focus:outline-none focus-visible:ring-1 focus-visible:ring-dark-900 focus-visible:ring-inset
         "
       >

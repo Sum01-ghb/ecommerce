@@ -78,7 +78,7 @@ export default function CartItemRow({ item }: CartItemRowProps) {
       {/* ── Thumbnail ─────────────────────────────────────────────────── */}
       <Link
         href={`/products/${item.productId}`}
-        className="flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 rounded-sm overflow-hidden bg-light-200 block"
+        className="flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 rounded-sm overflow-hidden bg-light-200 block cursor-pointer"
         aria-label={`View ${item.name}`}
       >
         <Image
@@ -96,7 +96,7 @@ export default function CartItemRow({ item }: CartItemRowProps) {
           {/* Product name */}
           <Link
             href={`/products/${item.productId}`}
-            className="text-body-medium font-medium text-dark-900 hover:underline line-clamp-2"
+            className="text-body-medium font-medium text-dark-900 hover:underline line-clamp-2 cursor-pointer"
           >
             {item.name}
           </Link>
@@ -122,7 +122,7 @@ export default function CartItemRow({ item }: CartItemRowProps) {
                 className="
                   w-6 h-6 flex items-center justify-center
                   border border-light-400 rounded-sm text-dark-700
-                  hover:border-dark-900 hover:text-dark-900
+                  hover:border-dark-900 hover:text-dark-900 cursor-pointer
                   disabled:opacity-50 disabled:cursor-not-allowed
                   transition-colors
                 "
@@ -139,7 +139,7 @@ export default function CartItemRow({ item }: CartItemRowProps) {
                 className="
                   w-6 h-6 flex items-center justify-center
                   border border-light-400 rounded-sm text-dark-700
-                  hover:border-dark-900 hover:text-dark-900
+                  hover:border-dark-900 hover:text-dark-900 cursor-pointer
                   disabled:opacity-50 disabled:cursor-not-allowed
                   transition-colors
                 "
@@ -160,7 +160,7 @@ export default function CartItemRow({ item }: CartItemRowProps) {
             disabled={isPending}
             aria-label={`Remove ${item.name} from cart`}
             className="
-              text-red/70 hover:text-red transition-colors
+              text-red/70 hover:text-red transition-colors cursor-pointer
               disabled:opacity-50 disabled:cursor-not-allowed
             "
           >

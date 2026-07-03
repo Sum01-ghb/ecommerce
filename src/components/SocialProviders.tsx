@@ -144,7 +144,7 @@ export default function SocialProviders({
             w-full flex items-center justify-center gap-3
             rounded-sm border border-light-400 bg-light-100
             px-4 py-3 text-caption font-medium text-dark-900
-            hover:bg-light-200 hover:border-dark-500
+            hover:bg-light-200 hover:border-dark-500 cursor-pointer
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900 focus-visible:ring-offset-2
             disabled:opacity-60 disabled:cursor-not-allowed
             transition-colors duration-150
@@ -172,7 +172,7 @@ export default function SocialProviders({
             w-full flex items-center justify-center gap-3
             rounded-sm border border-dark-900 bg-dark-900
             px-4 py-3 text-caption font-medium text-light-100
-            hover:bg-black hover:border-black
+            hover:bg-black hover:border-black cursor-pointer
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900 focus-visible:ring-offset-2
             disabled:opacity-60 disabled:cursor-not-allowed
             transition-colors duration-150

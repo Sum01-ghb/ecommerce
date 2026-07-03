@@ -77,7 +77,7 @@ export default function Footer() {
                   <li key={link.label}>
                     <Link
                       href={link.href}
-                      className="text-footnote text-dark-500 hover:text-light-100 transition-colors duration-150"
+                      className="text-footnote text-dark-500 hover:text-light-100 transition-colors duration-150 cursor-pointer"
                     >
                       {link.label}
                     </Link>
@@ -113,7 +113,7 @@ export default function Footer() {
                 key={social.label}
                 href={social.href}
                 aria-label={social.label}
-                className="text-dark-500 hover:text-light-100 transition-colors duration-150"
+                className="text-dark-500 hover:text-light-100 transition-colors duration-150 cursor-pointer"
               >
                 <Image
                   src={social.icon}

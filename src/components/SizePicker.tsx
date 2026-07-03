@@ -41,7 +41,7 @@ export default function SizePicker({ sizes }: SizePickerProps) {
           aria-label="View size guide"
           className="
             inline-flex items-center gap-1 text-footnote text-dark-700
-            hover:text-dark-900 underline underline-offset-2 transition-colors
+            hover:text-dark-900 underline underline-offset-2 transition-colors cursor-pointer
             focus:outline-none focus-visible:ring-1 focus-visible:ring-dark-900
           "
         >
@@ -72,7 +72,7 @@ export default function SizePicker({ sizes }: SizePickerProps) {
                 }
               }}
               className={`
-                relative py-2.5 text-caption border rounded-sm transition-all duration-150
+                relative py-2.5 text-caption border rounded-sm transition-all duration-150 cursor-pointer
                 focus:outline-none focus-visible:ring-2 focus-visible:ring-dark-900 focus-visible:ring-offset-1
                 ${!size.available
                   ? "border-light-300 text-dark-500 cursor-not-allowed bg-light-200 opacity-50"

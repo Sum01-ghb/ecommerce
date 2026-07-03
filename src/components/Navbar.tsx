@@ -48,7 +48,7 @@ export default function Navbar() {
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-16">
         <div className="flex h-14 items-center justify-between gap-6">
           {/* Logo */}
-          <Link href="/" className="flex-shrink-0" aria-label="Nike Home">
+          <Link href="/" className="flex-shrink-0 cursor-pointer" aria-label="Nike Home">
             <Image
               src="/logo.svg"
               alt="Nike"
@@ -68,7 +68,7 @@ export default function Navbar() {
               <Link
                 key={link.label}
                 href={link.href}
-                className="text-footnote font-medium text-light-300 hover:text-light-100 transition-colors duration-150"
+                className="text-footnote font-medium text-light-300 hover:text-light-100 transition-colors duration-150 cursor-pointer"
               >
                 {link.label}
               </Link>
@@ -82,7 +82,7 @@ export default function Navbar() {
               <div className="relative" ref={profileRef}>
                 <button
                   onClick={() => setProfileOpen((prev) => !prev)}
-                  className="text-footnote font-medium text-light-300 hover:text-light-100 transition-colors duration-150 flex items-center gap-1.5"
+                  className="text-footnote font-medium text-light-300 hover:text-light-100 transition-colors duration-150 flex items-center gap-1.5 cursor-pointer"
                   aria-label="Profile"
                   aria-expanded={profileOpen}
                 >
@@ -114,7 +114,7 @@ export default function Navbar() {
                     </div>
                     <button
                       onClick={handleSignOut}
-                      className="w-full text-left px-4 py-2 text-body text-dark-700 hover:bg-light-300 transition-colors"
+                      className="w-full text-left px-4 py-2 text-body text-dark-700 hover:bg-light-300 transition-colors cursor-pointer"
                     >
                       Sign Out
                     </button>
@@ -124,7 +124,7 @@ export default function Navbar() {
             ) : (
               <Link
                 href="/sign-in"
-                className="text-footnote font-medium text-light-300 hover:text-light-100 transition-colors duration-150"
+                className="text-footnote font-medium text-light-300 hover:text-light-100 transition-colors duration-150 cursor-pointer"
               >
                 Sign In
               </Link>
@@ -134,7 +134,7 @@ export default function Navbar() {
             <button
               onClick={toggleCart}
               aria-label={`Shopping cart, ${totalItems} items`}
-              className="relative text-footnote font-medium text-light-300 hover:text-light-100 transition-colors duration-150 flex items-center gap-1.5"
+              className="relative text-footnote font-medium text-light-300 hover:text-light-100 transition-colors duration-150 flex items-center gap-1.5 cursor-pointer"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -165,7 +165,7 @@ export default function Navbar() {
             <button
               onClick={toggleCart}
               aria-label="Cart"
-              className="relative text-light-300 hover:text-light-100"
+              className="relative text-light-300 hover:text-light-100 cursor-pointer"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -193,7 +193,7 @@ export default function Navbar() {
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileOpen}
               onClick={() => setMobileOpen((prev) => !prev)}
-              className="text-light-300 hover:text-light-100"
+              className="text-light-300 hover:text-light-100 cursor-pointer"
             >
               {mobileOpen ? (
                 <svg
@@ -243,7 +243,7 @@ export default function Navbar() {
               <li key={link.label}>
                 <Link
                   href={link.href}
-                  className="block px-6 py-3.5 text-body text-light-300 hover:bg-white/5 hover:text-light-100 transition-colors border-b border-white/5"
+                  className="block px-6 py-3.5 text-body text-light-300 hover:bg-white/5 hover:text-light-100 transition-colors border-b border-white/5 cursor-pointer"
                   onClick={() => setMobileOpen(false)}
                 >
                   {link.label}
@@ -261,7 +261,7 @@ export default function Navbar() {
                       await authClient.signOut();
                       setMobileOpen(false);
                     }}
-                    className="w-full text-left px-6 py-3.5 text-body text-light-300 hover:bg-white/5 hover:text-light-100 transition-colors border-b border-white/5"
+                    className="w-full text-left px-6 py-3.5 text-body text-light-300 hover:bg-white/5 hover:text-light-100 transition-colors border-b border-white/5 cursor-pointer"
                   >
                     Sign Out
                   </button>
@@ -269,7 +269,7 @@ export default function Navbar() {
               ) : (
                 <Link
                   href="/sign-in"
-                  className="block px-6 py-3.5 text-body text-light-300 hover:bg-white/5 hover:text-light-100 transition-colors border-b border-white/5"
+                  className="block px-6 py-3.5 text-body text-light-300 hover:bg-white/5 hover:text-light-100 transition-colors border-b border-white/5 cursor-pointer"
                   onClick={() => setMobileOpen(false)}
                 >
                   Sign In
@@ -279,7 +279,7 @@ export default function Navbar() {
             <li>
               <Link
                 href="/sign-up"
-                className="block px-6 py-3.5 text-body text-light-300 hover:bg-white/5 hover:text-light-100 transition-colors"
+                className="block px-6 py-3.5 text-body text-light-300 hover:bg-white/5 hover:text-light-100 transition-colors cursor-pointer"
                 onClick={() => setMobileOpen(false)}
               >
                 Sign Up

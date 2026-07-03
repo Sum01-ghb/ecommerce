@@ -208,7 +208,7 @@ export default function CartSummary({
           w-full flex items-center justify-center gap-2
           rounded-full bg-dark-900 text-light-100
           py-4 text-caption font-medium
-          hover:bg-black transition-colors duration-150
+          hover:bg-black transition-colors duration-150 cursor-pointer
           focus:outline-none focus-visible:ring-2 focus-visible:ring-dark-900 focus-visible:ring-offset-2
           disabled:opacity-50 disabled:cursor-not-allowed
         "

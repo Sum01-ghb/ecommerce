@@ -76,7 +76,7 @@ export default function Card({
       {/* Entire card links to product detail page */}
       <Link
         href={`/products/${id}`}
-        className="flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-dark-900 focus-visible:ring-offset-2 rounded-sm"
+        className="flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-dark-900 focus-visible:ring-offset-2 rounded-sm cursor-pointer"
         aria-label={`View ${name}`}
       >
         {/* Image container */}
@@ -114,7 +114,7 @@ export default function Card({
                 e.stopPropagation();
                 handleAddToCart();
               }}
-              className="w-full rounded-sm bg-dark-900 py-2.5 text-caption font-medium text-light-100 hover:bg-black transition-colors duration-150"
+              className="w-full rounded-sm bg-dark-900 py-2.5 text-caption font-medium text-light-100 hover:bg-black transition-colors duration-150 cursor-pointer"
             >
               Add to Cart
             </button>

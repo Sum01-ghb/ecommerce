@@ -38,7 +38,7 @@ export default function CollapsibleReviewText({
           onClick={() => setExpanded((v) => !v)}
           className="
             mt-1 text-footnote font-medium text-dark-700 underline underline-offset-2
-            hover:text-dark-900 transition-colors
+            hover:text-dark-900 transition-colors cursor-pointer
             focus:outline-none focus-visible:ring-1 focus-visible:ring-dark-900
           "
           aria-expanded={expanded}

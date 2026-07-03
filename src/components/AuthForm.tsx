@@ -311,7 +311,7 @@ export default function AuthForm({
           <div className="flex justify-end">
             <Link
               href="#"
-              className="text-footnote text-dark-700 hover:text-dark-900 hover:underline transition-colors"
+              className="text-footnote text-dark-700 hover:text-dark-900 hover:underline transition-colors cursor-pointer"
             >
               Forgot password?
             </Link>
@@ -326,7 +326,7 @@ export default function AuthForm({
             w-full flex items-center justify-center gap-2
             rounded-sm bg-dark-900 px-6 py-3.5
             text-caption font-medium text-light-100
-            hover:bg-black
+            hover:bg-black cursor-pointer
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900 focus-visible:ring-offset-2
             disabled:opacity-60 disabled:cursor-not-allowed
             transition-colors duration-150
@@ -344,7 +344,7 @@ export default function AuthForm({
         {switchText}{" "}
         <Link
           href={switchHref}
-          className="font-medium text-dark-900 underline underline-offset-2 hover:text-black transition-colors"
+          className="font-medium text-dark-900 underline underline-offset-2 hover:text-black transition-colors cursor-pointer"
         >
           {switchLinkLabel}
         </Link>
@@ -356,14 +356,14 @@ export default function AuthForm({
           By creating an account, you agree to Nike&apos;s{" "}
           <Link
             href="#"
-            className="underline hover:text-dark-700 transition-colors"
+            className="underline hover:text-dark-700 transition-colors cursor-pointer"
           >
             Terms of Service
           </Link>{" "}
           and{" "}
           <Link
             href="#"
-            className="underline hover:text-dark-700 transition-colors"
+            className="underline hover:text-dark-700 transition-colors cursor-pointer"
           >
             Privacy Policy
           </Link>
