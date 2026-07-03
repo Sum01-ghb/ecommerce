@@ -1,15 +1,5 @@
 "use client";
 
-/**
- * CartProvider.tsx
- *
- * A lightweight client component that hydrates the Zustand cart store
- * from the server on first mount. Renders nothing visible.
- *
- * Placed inside (root)/layout.tsx so every storefront page benefits
- * from a hydrated cart on load without SSR blocking.
- */
-
 import { useEffect } from "react";
 import { useCartStore } from "@/store/cart.store";
 import { getCart } from "@/lib/actions/cart";
@@ -38,8 +28,8 @@ export default function CartProvider() {
     return () => {
       cancelled = true;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 
   return null;
-}
+}

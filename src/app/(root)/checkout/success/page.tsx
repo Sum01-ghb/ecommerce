@@ -1,53 +1,20 @@
-/**
- * /checkout/success — Post-payment success page
- *
- * Architecture
- * ────────────
- * This is a server component. It receives ?session_id=cs_xxx from Stripe's
- * success_url redirect and either:
- *   a) Fetches the order by session ID metadata (happy path)
- *   b) Falls back to a polling-aware pending state if the webhook hasn't
- *      fired yet
- *   c) Shows a generic confirmation if the order ID can't be resolved
- *
- * The webhook creates the order asynchronously, so there's a short window
- * after the Stripe redirect where the order may not exist yet. We handle
- * this gracefully with a pending state rather than a hard error.
- *
- * Query params accepted:
- *   • session_id  — Stripe checkout session ID (always present from Stripe)
- *   • order_id    — Direct order UUID (future use / email links)
- */
-
-import { Suspense }       from "react";
-import Link               from "next/link";
+import { Suspense } from "react";
+import Link from "next/link";
 import { CheckCircle, Clock } from "lucide-react";
-import { stripe }         from "@/lib/stripe/client";
-import { getOrder }       from "@/lib/actions/orders";
-import { db }             from "@/lib/db";
+import { stripe } from "@/lib/stripe/client";
+import { getOrder } from "@/lib/actions/orders";
+import { db } from "@/lib/db";
 import { orders, payments } from "@/lib/db/schema";
-import { eq }             from "drizzle-orm";
-import OrderSuccess       from "@/components/OrderSuccess";
+import { eq } from "drizzle-orm";
+import OrderSuccess from "@/components/OrderSuccess";
 import type { OrderDetail } from "@/lib/actions/orders";
 
 export const dynamic = "force-dynamic";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Given a Stripe session ID, find the order that was created for it.
- * We look up via payments.transactionId which stores the payment_intent ID.
- * To get the payment_intent from the session we call the Stripe API.
- *
- * Returns null if the order hasn't been created yet (webhook delay).
- */
 async function findOrderByStripeSession(
-  sessionId: string
+  sessionId: string,
 ): Promise<OrderDetail | null> {
   try {
-    // Retrieve the Stripe session to get the payment_intent ID
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
       expand: ["payment_intent"],
     });
@@ -59,7 +26,6 @@ async function findOrderByStripeSession(
 
     if (!paymentIntentId) return null;
 
-    // Find the payment record linked to this payment_intent
     const [paymentRow] = await db
       .select({ orderId: payments.orderId })
       .from(payments)
@@ -76,11 +42,6 @@ async function findOrderByStripeSession(
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Fallback states
-// ─────────────────────────────────────────────────────────────────────────────
-
-/** Shown when the webhook hasn't fired yet or STRIPE_SECRET_KEY is missing */
 function PendingOrder({ sessionId }: { sessionId: string | undefined }) {
   return (
     <div className="flex flex-col items-center justify-center gap-5 py-20 text-center max-w-md mx-auto px-4">
@@ -92,8 +53,8 @@ function PendingOrder({ sessionId }: { sessionId: string | undefined }) {
           Order Processing
         </h1>
         <p className="text-body text-dark-700">
-          Your payment was successful. We&apos;re finalising your order —
-          this usually takes a few seconds.
+          Your payment was successful. We&apos;re finalising your order — this
+          usually takes a few seconds.
         </p>
       </div>
       {sessionId && (
@@ -129,7 +90,6 @@ function PendingOrder({ sessionId }: { sessionId: string | undefined }) {
   );
 }
 
-/** Generic confirmation when we have no session ID at all */
 function GenericConfirmation() {
   return (
     <div className="flex flex-col items-center justify-center gap-5 py-20 text-center max-w-md mx-auto px-4">
@@ -141,8 +101,8 @@ function GenericConfirmation() {
           Payment Successful
         </h1>
         <p className="text-body text-dark-700">
-          Thank you for your purchase! You&apos;ll receive a confirmation
-          email shortly.
+          Thank you for your purchase! You&apos;ll receive a confirmation email
+          shortly.
         </p>
       </div>
       <Link
@@ -159,10 +119,6 @@ function GenericConfirmation() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Main data-fetching component (inside Suspense)
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface SuccessContentProps {
   sessionId: string | undefined;
   orderId: string | undefined;
@@ -171,28 +127,21 @@ interface SuccessContentProps {
 async function SuccessContent({ sessionId, orderId }: SuccessContentProps) {
   let order: OrderDetail | null = null;
 
-  // Try direct orderId first (e.g. from an email link)
   if (orderId) {
     const result = await getOrder(orderId);
     order = result.success ? result.data : null;
   }
 
-  // Fall back to resolving via Stripe session ID
   if (!order && sessionId) {
     order = await findOrderByStripeSession(sessionId);
   }
 
-  // Order not yet created — show pending state
   if (!order) {
     return <PendingOrder sessionId={sessionId} />;
   }
 
   return <OrderSuccess order={order} />;
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Page
-// ─────────────────────────────────────────────────────────────────────────────
 
 interface SuccessPageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -211,7 +160,6 @@ export default async function CheckoutSuccessPage({
     ? params.order_id[0]
     : params.order_id;
 
-  // Nothing to work with at all
   if (!sessionId && !orderId) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center">

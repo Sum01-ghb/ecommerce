@@ -1,39 +1,19 @@
 "use client";
 
-/**
- * SizePicker.tsx — Client component
- *
- * Renders an accessible size selector grid.
- * UI-only — no backend state; selecting a size is a pure visual toggle.
- *
- * Accessibility:
- *   • Each size button carries aria-pressed and aria-disabled.
- *   • Keyboard navigable with focus-visible ring.
- *   • Unavailable sizes are visually dimmed and non-interactive.
- */
-
 import { useState } from "react";
 import { Ruler } from "lucide-react";
 import type { ProductSize } from "@/lib/data/productDetail";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Props
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface SizePickerProps {
   sizes: ProductSize[];
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Component
-// ─────────────────────────────────────────────────────────────────────────────
 
 export default function SizePicker({ sizes }: SizePickerProps) {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
   return (
     <div>
-      {/* Header row */}
+      {}
       <div className="flex items-center justify-between mb-3">
         <p className="text-caption font-medium text-dark-900">Select Size</p>
         <button
@@ -50,7 +30,7 @@ export default function SizePicker({ sizes }: SizePickerProps) {
         </button>
       </div>
 
-      {/* Size grid */}
+      {}
       <div
         role="group"
         aria-label="Available sizes"
@@ -83,7 +63,7 @@ export default function SizePicker({ sizes }: SizePickerProps) {
               `}
             >
               {size.label}
-              {/* Diagonal strike-through for unavailable sizes */}
+              {}
               {!size.available && (
                 <span
                   className="absolute inset-0 flex items-center justify-center pointer-events-none"
@@ -109,4 +89,4 @@ export default function SizePicker({ sizes }: SizePickerProps) {
       </div>
     </div>
   );
-}
+}

@@ -1,16 +1,4 @@
-/**
- * products.ts — Static mock product catalogue for the /products page.
- *
- * Data mirrors the DB schema: products → variants (color × size) → images.
- * All prices are in cents (e.g. 10500 = $105.00).
- * Images reference files that exist in /public/shoes/.
- */
-
 import type { BadgeVariant } from "@/components/Card";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
 
 export type GenderSlug = "men" | "women" | "kids" | "unisex";
 export type ColorSlug = "white" | "black" | "red" | "blue" | "grey" | "green" | "brown";
@@ -27,30 +15,26 @@ export interface MockColor {
 export interface MockProduct {
   id: number;
   name: string;
-  /** Short subtitle shown under the name in the card, e.g. "Men's Shoes" */
+
   category: string;
   categorySlug: CategorySlug;
   gender: string;
   genderSlug: GenderSlug;
-  /** Available color variants */
+
   colors: MockColor[];
-  /** Available size slugs */
+
   sizes: SizeSlug[];
-  /** Base price in cents */
+
   price: number;
-  /** Original price in cents (only set when on sale) */
+
   originalPrice?: number;
   imageSrc: string;
   badge?: BadgeVariant;
   discountLabel?: string;
-  /** Unix-ish sortable timestamp (higher = newer) */
+
   createdAt: number;
   description: string;
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Color definitions
-// ─────────────────────────────────────────────────────────────────────────────
 
 const WHITE: MockColor = { slug: "white", name: "White", hexCode: "#FFFFFF" };
 const BLACK: MockColor = { slug: "black", name: "Black", hexCode: "#000000" };
@@ -59,10 +43,6 @@ const BLUE: MockColor = { slug: "blue", name: "Blue", hexCode: "#1E40AF" };
 const GREY: MockColor = { slug: "grey", name: "Grey", hexCode: "#808080" };
 const GREEN: MockColor = { slug: "green", name: "Green", hexCode: "#007D48" };
 const BROWN: MockColor = { slug: "brown", name: "Brown", hexCode: "#964B00" };
-
-// ─────────────────────────────────────────────────────────────────────────────
-// All sizes
-// ─────────────────────────────────────────────────────────────────────────────
 
 const ALL_SIZES: SizeSlug[] = [
   "us-6",
@@ -74,10 +54,6 @@ const ALL_SIZES: SizeSlug[] = [
   "us-12",
   "us-13",
 ];
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Catalogue
-// ─────────────────────────────────────────────────────────────────────────────
 
 export const MOCK_PRODUCTS: MockProduct[] = [
   {
@@ -324,10 +300,6 @@ export const MOCK_PRODUCTS: MockProduct[] = [
       "Lightweight cushioning for a smooth feel, perfect for your next run.",
   },
 ];
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Filter metadata (used to build the Filters UI)
-// ─────────────────────────────────────────────────────────────────────────────
 
 export const GENDER_OPTIONS = [
   { slug: "men", label: "Men" },

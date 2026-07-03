@@ -1,9 +1,5 @@
 import { z } from "zod";
 
-// ---------------------------------------------------------------------------
-// Field schemas (reused across sign-in and sign-up)
-// ---------------------------------------------------------------------------
-
 const emailSchema = z
   .string()
   .trim()
@@ -21,10 +17,6 @@ const nameSchema = z
   .min(1, "Full name is required")
   .max(100, "Name is too long");
 
-// ---------------------------------------------------------------------------
-// Form schemas
-// ---------------------------------------------------------------------------
-
 export const signUpSchema = z.object({
   name: nameSchema,
   email: emailSchema,
@@ -36,16 +28,8 @@ export const signInSchema = z.object({
   password: passwordSchema,
 });
 
-// ---------------------------------------------------------------------------
-// Inferred types
-// ---------------------------------------------------------------------------
-
 export type SignUpInput = z.infer<typeof signUpSchema>;
 export type SignInInput = z.infer<typeof signInSchema>;
-
-// ---------------------------------------------------------------------------
-// Cart item schema (used for guest-cart merge validation)
-// ---------------------------------------------------------------------------
 
 export const cartItemSchema = z.object({
   id: z.number().int().positive(),
@@ -59,10 +43,6 @@ export const cartSchema = z.array(cartItemSchema);
 
 export type CartItemInput = z.infer<typeof cartItemSchema>;
 
-// ---------------------------------------------------------------------------
-// Action result type
-// ---------------------------------------------------------------------------
-
 export type ActionResult<T = void> =
   | { success: true; data: T }
-  | { success: false; error: string; fieldErrors?: Record<string, string[]> };
+  | { success: false; error: string; fieldErrors?: Record<string, string[]> };

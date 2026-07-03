@@ -16,40 +16,22 @@ import {
   type ActionResult,
 } from "./schemas";
 
-// Types and schemas are exported from ./schemas.ts
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
 const GUEST_COOKIE = "guest_session";
-const GUEST_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
+const GUEST_TTL_MS = 7 * 24 * 60 * 60 * 1000; 
 
 const COOKIE_DEFAULTS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: "strict" as const,
   path: "/",
-  maxAge: 60 * 60 * 24 * 7, // 7 days in seconds
+  maxAge: 60 * 60 * 24 * 7, 
 } as const;
 
-// ---------------------------------------------------------------------------
-// Guest session helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Read the current guest session token from the cookie jar.
- * Returns null if no guest session exists.
- */
 export async function guestSession(): Promise<string | null> {
   const cookieStore = await cookies();
   return cookieStore.get(GUEST_COOKIE)?.value ?? null;
 }
 
-/**
- * Create a new guest session — insert a DB record and set the cookie.
- * If a valid, non-expired guest session already exists, return it unchanged.
- */
 export async function createGuestSession(): Promise<string> {
   const cookieStore = await cookies();
   const existing = cookieStore.get(GUEST_COOKIE)?.value;
@@ -85,26 +67,12 @@ export async function createGuestSession(): Promise<string> {
   return token;
 }
 
-/**
- * Delete a guest session from the DB and clear its cookie.
- * Called after successful login / sign-up.
- */
 async function clearGuestSession(token: string): Promise<void> {
   await db.delete(guest).where(eq(guest.sessionToken, token));
   const cookieStore = await cookies();
   cookieStore.delete(GUEST_COOKIE);
 }
 
-// ---------------------------------------------------------------------------
-// Cart migration helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Validate and return guest cart items so the client can rehydrate the
- * Zustand store under the authenticated user.
- *
- * In a future iteration this will upsert into a server-side cart table.
- */
 export async function mergeGuestCartWithUserCart(
   guestCartJson: string,
 ): Promise<ActionResult<{ mergedItems: CartItemInput[] }>> {
@@ -123,30 +91,15 @@ export async function mergeGuestCartWithUserCart(
   return { success: true, data: { mergedItems: parsed.data } };
 }
 
-// ---------------------------------------------------------------------------
-// Sign Up
-// ---------------------------------------------------------------------------
-
-/**
- * Register a new user with email + password.
- *
- * 1. Server-side Zod validation.
- * 2. Create account via Better Auth.
- * 3. Merge + clear guest session.
- * 4. Redirect to callbackUrl.
- *
- * Returns an ActionResult only on validation / auth errors.
- * On success it calls `redirect()` which throws internally (Next.js design).
- */
 export async function signUp(
   input: SignUpInput,
   callbackUrl = "/",
   guestCartJson?: string,
 ): Promise<ActionResult> {
-  // 1. Validate
+
   const parsed = signUpSchema.safeParse(input);
   if (!parsed.success) {
-    // Zod v4: use .error.issues to build field errors instead of deprecated .flatten()
+
     const fieldErrors: Record<string, string[]> = {};
     for (const issue of parsed.error.issues) {
       const key = issue.path[0]?.toString() ?? "_";
@@ -163,7 +116,7 @@ export async function signUp(
   const { name, email, password } = parsed.data;
 
   try {
-    // 2. Create account
+
     const reqHeaders = await headers();
     const response = await auth.api.signUpEmail({
       body: { name, email, password },
@@ -177,7 +130,6 @@ export async function signUp(
       return { success: false, error: msg };
     }
 
-    // 3. Merge cart, then clear guest session
     const guestToken = await guestSession();
     if (guestToken) {
       const { mergeGuestCartIntoUserCart } = await import("@/lib/actions/cart");
@@ -202,28 +154,15 @@ export async function signUp(
     return { success: false, error: message };
   }
 
-  // 4. Redirect — must be outside try/catch (Next.js throws NEXT_REDIRECT internally)
   redirect(callbackUrl);
 }
 
-// ---------------------------------------------------------------------------
-// Sign In
-// ---------------------------------------------------------------------------
-
-/**
- * Authenticate an existing user.
- *
- * 1. Server-side Zod validation.
- * 2. Sign in via Better Auth.
- * 3. Merge + clear guest session.
- * 4. Redirect to callbackUrl.
- */
 export async function signIn(
   input: SignInInput,
   callbackUrl = "/",
   guestCartJson?: string,
 ): Promise<ActionResult> {
-  // 1. Validate
+
   const parsed = signInSchema.safeParse(input);
   if (!parsed.success) {
     const fieldErrors: Record<string, string[]> = {};
@@ -242,7 +181,7 @@ export async function signIn(
   const { email, password } = parsed.data;
 
   try {
-    // 2. Authenticate
+
     const reqHeaders = await headers();
     const response = await auth.api.signInEmail({
       body: { email, password },
@@ -256,7 +195,6 @@ export async function signIn(
       return { success: false, error: msg };
     }
 
-    // 3. Merge cart, then clear guest session
     const guestToken2 = await guestSession();
     if (guestToken2) {
       const { mergeGuestCartIntoUserCart } = await import("@/lib/actions/cart");
@@ -271,17 +209,9 @@ export async function signIn(
     return { success: false, error: message };
   }
 
-  // 4. Redirect
   redirect(callbackUrl);
 }
 
-// ---------------------------------------------------------------------------
-// Sign Out
-// ---------------------------------------------------------------------------
-
-/**
- * Invalidate the current authenticated session and redirect.
- */
 export async function signOut(callbackUrl = "/"): Promise<ActionResult> {
   try {
     const reqHeaders = await headers();

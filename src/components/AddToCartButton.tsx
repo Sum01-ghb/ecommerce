@@ -1,21 +1,8 @@
 "use client";
-
-/**
- * AddToCartButton.tsx
- *
- * Client component used in the Product Detail Page.
- * Connects the "Add to Bag" button to the cart server action and Zustand store.
- *
- * Props:
- *   - productVariantId: UUID of the selected variant
- *   - productName:      used in the aria-label
- *   - disabled:         true when no size has been selected
- */
-
 import { ShoppingBag } from "lucide-react";
 import { useTransition, useState } from "react";
 import { useCartStore } from "@/store/cart.store";
-import { addCartItem }  from "@/lib/actions/cart";
+import { addCartItem } from "@/lib/actions/cart";
 
 interface AddToCartButtonProps {
   productVariantId: string;
@@ -54,12 +41,12 @@ export default function AddToCartButton({
     feedback === "added"
       ? "Added to Bag!"
       : feedback === "error"
-      ? "Failed — Try Again"
-      : disabled
-      ? "Select a Size"
-      : isPending
-      ? "Adding…"
-      : "Add to Bag";
+        ? "Failed — Try Again"
+        : disabled
+          ? "Select a Size"
+          : isPending
+            ? "Adding…"
+            : "Add to Bag";
 
   return (
     <button
@@ -76,10 +63,10 @@ export default function AddToCartButton({
           disabled
             ? "bg-light-300 text-dark-500 cursor-not-allowed"
             : feedback === "added"
-            ? "bg-green text-light-100 cursor-pointer"
-            : feedback === "error"
-            ? "bg-red text-light-100 cursor-pointer"
-            : "bg-dark-900 text-light-100 hover:bg-black cursor-pointer"
+              ? "bg-green text-light-100 cursor-pointer"
+              : feedback === "error"
+                ? "bg-red text-light-100 cursor-pointer"
+                : "bg-dark-900 text-light-100 hover:bg-black cursor-pointer"
         }
       `}
     >

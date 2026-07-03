@@ -3,13 +3,8 @@ import { relations } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { user } from "./user";
 
-// ── Enums ─────────────────────────────────────────────────────────────────────
 export const addressTypeEnum = pgEnum("address_type", ["billing", "shipping"]);
 
-/**
- * `addresses` — postal addresses linked to a user.
- * A user may have many addresses; `is_default` flags the preferred one per type.
- */
 export const addresses = pgTable("addresses", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id")
@@ -32,9 +27,8 @@ export const addressesRelations = relations(addresses, ({ one }) => ({
   }),
 }));
 
-// ── Zod schemas ──────────────────────────────────────────────────────────────
 export const insertAddressSchema = createInsertSchema(addresses);
 export const selectAddressSchema = createSelectSchema(addresses);
 
 export type Address    = typeof addresses.$inferSelect;
-export type NewAddress = typeof addresses.$inferInsert;
+export type NewAddress = typeof addresses.$inferInsert;

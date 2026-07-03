@@ -1,11 +1,5 @@
 import {pgTable, text, boolean, timestamp, uuid} from "drizzle-orm/pg-core";
 
-/**
- * `user` — Better Auth core table.
- *
- * Column names must exactly match what Better Auth expects.
- * `id` uses text to match Better Auth's generated IDs.
- */
 export const user = pgTable("user", {
   id: uuid("id").primaryKey(),
   name: text("name"),
@@ -17,4 +11,4 @@ export const user = pgTable("user", {
 });
 
 export type User = typeof user.$inferSelect;
-export type NewUser = typeof user.$inferInsert;
+export type NewUser = typeof user.$inferInsert;

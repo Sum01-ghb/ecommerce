@@ -1,13 +1,5 @@
 "use client";
 
-/**
- * CollapsibleReviewText.tsx — Client component
- *
- * Truncates long review text to 160 characters with a "Read more / Show less"
- * toggle. Used inside ReviewsSection (server component) for reviews that
- * exceed the threshold.
- */
-
 import { useState } from "react";
 
 interface CollapsibleReviewTextProps {
@@ -48,4 +40,4 @@ export default function CollapsibleReviewText({
       )}
     </div>
   );
-}
+}

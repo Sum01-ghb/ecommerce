@@ -5,10 +5,6 @@ import { z } from "zod";
 import { products } from "./products";
 import { user } from "./user";
 
-/**
- * `reviews` — user ratings and comments on a product.
- * Rating is constrained to 1–5 in the Zod schema (DB-level check can be added via migration).
- */
 export const reviews = pgTable("reviews", {
   id: uuid("id").primaryKey().defaultRandom(),
   productId: uuid("product_id")
@@ -17,7 +13,7 @@ export const reviews = pgTable("reviews", {
   userId: uuid("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
-  rating: integer("rating").notNull(),   // 1–5
+  rating: integer("rating").notNull(),   
   comment: text("comment"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -33,11 +29,10 @@ export const reviewsRelations = relations(reviews, ({ one }) => ({
   }),
 }));
 
-// ── Zod schemas ──────────────────────────────────────────────────────────────
 export const insertReviewSchema = createInsertSchema(reviews, {
   rating: z.number().int().min(1).max(5),
 });
 export const selectReviewSchema = createSelectSchema(reviews);
 
 export type Review    = typeof reviews.$inferSelect;
-export type NewReview = typeof reviews.$inferInsert;
+export type NewReview = typeof reviews.$inferInsert;

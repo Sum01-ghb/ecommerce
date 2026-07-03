@@ -7,12 +7,7 @@ dotenv.config({ path: ".env" });
 
 const sql = neon(process.env.DATABASE_URL!);
 
-/**
- * Single Drizzle client for the entire application.
- * All tables — auth and commerce — are unified under one schema object.
- */
 export const db = drizzle(sql, { schema });
 export type Database = typeof db;
 
-// Re-export full schema for convenience
-export * from "./schema";
+export * from "./schema";

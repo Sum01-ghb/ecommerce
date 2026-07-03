@@ -1,19 +1,9 @@
-/**
- * Schema barrel — single import point for the entire Drizzle schema.
- *
- * Auth tables (user, session, account, verification, guest) are kept separate
- * from commerce tables but all exported from here so the Drizzle client and
- * drizzle-kit can consume one unified schema object.
- */
-
-// ── Auth ──────────────────────────────────────────────────────────────────────
 export { user, type User, type NewUser } from "./user";
 export { session, type Session, type NewSession } from "./session";
 export { account, type Account, type NewAccount } from "./account";
 export { verification, type Verification, type NewVerification } from "./verification";
 export { guest, type Guest, type NewGuest } from "./guest";
 
-// ── Filters ───────────────────────────────────────────────────────────────────
 export {
   genders,
   insertGenderSchema,
@@ -38,7 +28,6 @@ export {
   type NewSize,
 } from "./filters/sizes";
 
-// ── Taxonomy ──────────────────────────────────────────────────────────────────
 export {
   categories,
   categoriesRelations,
@@ -56,7 +45,6 @@ export {
   type NewBrand,
 } from "./brands";
 
-// ── Products ──────────────────────────────────────────────────────────────────
 export {
   products,
   productVariants,
@@ -79,7 +67,6 @@ export {
   type Dimensions,
 } from "./products";
 
-// ── Commerce ──────────────────────────────────────────────────────────────────
 export {
   addressTypeEnum,
   addresses,
@@ -172,4 +159,4 @@ export {
   selectReviewSchema,
   type Review,
   type NewReview,
-} from "./reviews";
+} from "./reviews";

@@ -1,13 +1,5 @@
 "use client";
 
-/**
- * Sort.tsx — Client-only sort dropdown for the products page.
- *
- * Reads current sort from the URL and pushes shallow updates via
- * Next.js `useRouter`. Uses `query-string` via the shared helpers in
- * `/lib/utils/query`.
- */
-
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useCallback } from "react";
 import { ChevronDown } from "lucide-react";
@@ -31,7 +23,6 @@ export default function Sort() {
   const pathname     = usePathname();
   const searchParams = useSearchParams();
 
-  // Build a plain object from the URLSearchParams for our parser
   const rawParams = Object.fromEntries(searchParams.entries());
   const parsed    = parseSearchParams(rawParams);
 
@@ -80,7 +71,7 @@ export default function Sort() {
           ))}
         </select>
 
-        {/* Custom chevron icon */}
+        {}
         <ChevronDown
           size={14}
           className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-dark-700"
@@ -89,4 +80,4 @@ export default function Sort() {
       </div>
     </div>
   );
-}
+}

@@ -1,15 +1,6 @@
 import {pgTable, text, timestamp, uuid} from "drizzle-orm/pg-core";
 import { user } from "./user";
 
-/**
- * `account` — Better Auth account table.
- *
- * Supports both credential-based logins (password stored here after hashing)
- * and future OAuth providers (access/refresh tokens, idToken, scope).
- *
- * - `providerId`: e.g. "credential", "google", "apple"
- * - `accountId`: provider-specific user identifier
- */
 export const account = pgTable("account", {
   id: uuid("id").primaryKey(),
   userId: uuid("user_id")
@@ -23,11 +14,11 @@ export const account = pgTable("account", {
   refreshTokenExpiresAt: timestamp("refresh_token_expires_at", { withTimezone: true }),
   scope: text("scope"),
   idToken: text("id_token"),
-  /** Hashed password — only set for "credential" provider. */
+
   password: text("password"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export type Account = typeof account.$inferSelect;
-export type NewAccount = typeof account.$inferInsert;
+export type NewAccount = typeof account.$inferInsert;

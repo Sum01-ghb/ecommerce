@@ -1,12 +1,6 @@
 import {pgTable, text, timestamp, uuid} from "drizzle-orm/pg-core";
 import { user } from "./user";
 
-/**
- * `session` — Better Auth session table.
- *
- * - `token` is the opaque session token stored in the `auth_session` cookie.
- * - `userId` is a FK to `user.id`.
- */
 export const session = pgTable("session", {
   id: uuid("id").primaryKey(),
   userId: uuid("user_id")
@@ -21,4 +15,4 @@ export const session = pgTable("session", {
 });
 
 export type Session = typeof session.$inferSelect;
-export type NewSession = typeof session.$inferInsert;
+export type NewSession = typeof session.$inferInsert;

@@ -13,10 +13,6 @@ export const metadata: Metadata = {
     "Explore the exclusive collection of high-performance Nike running, lifestyle, and basketball footwear at Nike Select Lab. Built with Next.js, Drizzle, and Zustand.",
 };
 
-/**
- * Root HTML shell — no Navbar/Footer here.
- * Each route group ((root), (auth)) provides its own layout.
- */
 export default function RootLayout({
   children,
 }: Readonly<{

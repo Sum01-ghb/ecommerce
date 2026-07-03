@@ -1,16 +1,5 @@
 "use client";
 
-/**
- * CartDrawer.tsx
- *
- * Slide-in cart drawer (right side).
- * Reads from the Zustand cart store (cart.store.ts) and calls
- * server actions for update/remove operations.
- *
- * The drawer mirrors the cart page: quantity controls + trash icon per item.
- * Footer: subtotal + "View Cart" link + "Checkout" button.
- */
-
 import React, { useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -18,20 +7,12 @@ import { useCartStore } from "@/store/cart.store";
 import { X, Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
 import { updateCartItem, removeCartItem } from "@/lib/actions/cart";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
 function formatPrice(cents: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
   }).format(cents / 100);
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Single drawer item
-// ─────────────────────────────────────────────────────────────────────────────
 
 function DrawerItem({
   item,
@@ -61,7 +42,7 @@ function DrawerItem({
     <div
       className={`flex gap-4 border-b border-light-300 pb-6 last:border-0 last:pb-0 transition-opacity ${isPending ? "opacity-50" : "opacity-100"}`}
     >
-      {/* Thumbnail */}
+      {}
       <Link
         href={`/products/${item.productId}`}
         className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-sm bg-light-200 block cursor-pointer"
@@ -76,7 +57,7 @@ function DrawerItem({
         />
       </Link>
 
-      {/* Details */}
+      {}
       <div className="flex-1 flex flex-col justify-between min-w-0">
         <div className="flex justify-between gap-2">
           <div className="min-w-0">
@@ -90,7 +71,7 @@ function DrawerItem({
         </div>
 
         <div className="flex items-center justify-between pt-2">
-          {/* Qty controls */}
+          {}
           <div className="flex items-center border border-light-400 rounded-sm">
             <button
               onClick={() => handleQty(-1)}
@@ -111,7 +92,7 @@ function DrawerItem({
             </button>
           </div>
 
-          {/* Delete */}
+          {}
           <button
             onClick={handleRemove}
             disabled={isPending}
@@ -126,10 +107,6 @@ function DrawerItem({
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Drawer
-// ─────────────────────────────────────────────────────────────────────────────
-
 export default function CartDrawer() {
   const { isOpen, items, setIsOpen } = useCartStore();
 
@@ -139,7 +116,7 @@ export default function CartDrawer() {
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
-      {/* Backdrop */}
+      {}
       <div
         className="absolute inset-0 bg-dark-900/50 backdrop-blur-sm"
         onClick={() => setIsOpen(false)}
@@ -149,7 +126,7 @@ export default function CartDrawer() {
       <div className="absolute inset-y-0 right-0 flex max-w-full pl-10">
         <div className="w-screen max-w-md flex flex-col h-full bg-light-100 shadow-2xl border-l border-light-300">
 
-          {/* Header */}
+          {}
           <div className="flex items-center justify-between px-6 py-5 border-b border-light-300">
             <div className="flex items-center gap-2">
               <ShoppingBag size={20} className="text-dark-900" />
@@ -171,7 +148,7 @@ export default function CartDrawer() {
             </button>
           </div>
 
-          {/* Items */}
+          {}
           <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
             {items.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center space-y-4 py-16">
@@ -196,7 +173,7 @@ export default function CartDrawer() {
             )}
           </div>
 
-          {/* Footer */}
+          {}
           {items.length > 0 && (
             <div className="border-t border-light-300 p-6 space-y-3">
               <div className="flex justify-between items-center">
@@ -209,7 +186,7 @@ export default function CartDrawer() {
                 Shipping and taxes calculated at checkout.
               </p>
 
-              {/* View Cart */}
+              {}
               <Link
                 href="/cart"
                 onClick={() => setIsOpen(false)}
@@ -222,7 +199,7 @@ export default function CartDrawer() {
                 View Cart
               </Link>
 
-              {/* Checkout — goes to /cart where the Stripe checkout button lives */}
+              {}
               <Link
                 href="/cart"
                 onClick={() => setIsOpen(false)}

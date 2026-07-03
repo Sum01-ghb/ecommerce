@@ -1,26 +1,7 @@
-/**
- * OrderSuccess.tsx — Post-checkout success UI
- *
- * Displayed on /checkout/success after Stripe redirects the user back.
- * Shows:
- *   • A confirmation header with the order ID
- *   • Each purchased line item (image, name, size, qty, price)
- *   • Order totals
- *   • Shipping address summary
- *   • CTAs: continue shopping / view orders
- *
- * This is a pure presentational component — data is fetched in the
- * server component (success/page.tsx) and passed in as props.
- */
-
 import Image from "next/image";
 import Link from "next/link";
 import { CheckCircle, MapPin, Package } from "lucide-react";
 import type { OrderDetail } from "@/lib/actions/orders";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
 
 function formatPrice(cents: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -37,10 +18,6 @@ function formatDate(date: Date): string {
     day: "numeric",
   }).format(new Date(date));
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Sub-components
-// ─────────────────────────────────────────────────────────────────────────────
 
 function ConfirmationHeader({ orderId }: { orderId: string }) {
   const shortId = orderId.slice(0, 8).toUpperCase();
@@ -70,7 +47,7 @@ function ConfirmationHeader({ orderId }: { orderId: string }) {
 function OrderLineItemRow({ item }: { item: OrderDetail["items"][0] }) {
   return (
     <div className="flex gap-4 py-5 border-b border-light-300 last:border-b-0">
-      {/* Image */}
+      {}
       <Link
         href={`/products/${item.productId}`}
         className="flex-shrink-0 w-20 h-20 rounded-sm overflow-hidden bg-light-200 block"
@@ -85,7 +62,7 @@ function OrderLineItemRow({ item }: { item: OrderDetail["items"][0] }) {
         />
       </Link>
 
-      {/* Details */}
+      {}
       <div className="flex-1 flex justify-between gap-2 min-w-0">
         <div className="min-w-0">
           <p className="text-caption font-medium text-dark-900 line-clamp-2">
@@ -178,10 +155,6 @@ function OrderTotals({ order }: { order: OrderDetail }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Main component
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface OrderSuccessProps {
   order: OrderDetail;
 }
@@ -189,17 +162,17 @@ interface OrderSuccessProps {
 export default function OrderSuccess({ order }: OrderSuccessProps) {
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
-      {/* Confirmation header */}
+      {}
       <ConfirmationHeader orderId={order.id} />
 
-      {/* Order date */}
+      {}
       <p className="text-footnote text-dark-700 text-center mt-4 mb-6">
         Placed on {formatDate(order.createdAt)}
       </p>
 
-      {/* Two-column layout on sm+ */}
+      {}
       <div className="flex flex-col gap-6">
-        {/* Left / top: items */}
+        {}
         <section aria-label="Ordered items">
           <div className="flex items-center gap-2 mb-3">
             <Package size={16} className="text-dark-700" aria-hidden="true" />
@@ -214,13 +187,13 @@ export default function OrderSuccess({ order }: OrderSuccessProps) {
           </div>
         </section>
 
-        {/* Right / bottom: totals + shipping */}
+        {}
         <div className="flex flex-col gap-4">
           <OrderTotals order={order} />
           <ShippingAddressSummary address={order.shippingAddress} />
         </div>
 
-        {/* CTAs */}
+        {}
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
           <Link
             href="/products"
@@ -248,7 +221,7 @@ export default function OrderSuccess({ order }: OrderSuccessProps) {
           </Link>
         </div>
 
-        {/* Support note */}
+        {}
         <p className="text-footnote text-center text-dark-500">
           Questions about your order?{" "}
           <Link href="#" className="underline underline-offset-2 hover:text-dark-900 transition-colors">
@@ -258,4 +231,4 @@ export default function OrderSuccess({ order }: OrderSuccessProps) {
       </div>
     </div>
   );
-}
+}

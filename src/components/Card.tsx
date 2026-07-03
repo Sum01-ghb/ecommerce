@@ -6,27 +6,27 @@ import { useRouter } from "next/navigation";
 export type BadgeVariant = "best-seller" | "sale" | "new" | "none";
 
 export interface CardProps {
-  /** Product unique id */
+
   id: string | number;
-  /** Product name */
+
   name: string;
-  /** Short category or sub-title, e.g. "Men's Shoes" */
+
   category: string;
-  /** Number of colour options available */
+
   colourCount?: number;
-  /** Price in cents (e.g. 11500 → $115.00) */
+
   price: number;
-  /** Original / compare-at price in cents (shows strike-through) */
+
   originalPrice?: number;
-  /** Absolute path to the product image inside /public */
+
   imageSrc: string;
-  /** Alt text for the image */
+
   imageAlt?: string;
-  /** Optional badge shown at top-left of the image */
+
   badge?: BadgeVariant;
-  /** Optional discount % label shown next to badge when badge is 'sale' */
+
   discountLabel?: string;
-  /** Optional click handler override (defaults to addToCart) */
+
   onClick?: () => void;
 }
 
@@ -65,23 +65,21 @@ export default function Card({
 }: CardProps) {
   const router = useRouter();
 
-  // "Add to Cart" on the listing card navigates to the PDP where the user
-  // picks a size before adding. Shoe variants require size selection.
   const handleAddToCart = onClick ?? (() => router.push(`/products/${id}`));
 
   const hasDiscount = originalPrice !== undefined && originalPrice > price;
 
   return (
     <article className="group flex flex-col">
-      {/* Entire card links to product detail page */}
+      {}
       <Link
         href={`/products/${id}`}
         className="flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-dark-900 focus-visible:ring-offset-2 rounded-sm cursor-pointer"
         aria-label={`View ${name}`}
       >
-        {/* Image container */}
+        {}
         <div className="relative aspect-square w-full overflow-hidden bg-light-200 cursor-pointer">
-          {/* Badge */}
+          {}
           {badge !== "none" && (
             <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
               <span
@@ -105,7 +103,7 @@ export default function Card({
             className="object-cover object-center transition-transform duration-500 ease-out group-hover:scale-105"
           />
 
-          {/* Hover CTA overlay — stopPropagation keeps it from triggering the Link */}
+          {}
           <div className="absolute inset-x-0 bottom-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out p-3">
             <button
               aria-label={`Add ${name} to cart`}
@@ -121,24 +119,24 @@ export default function Card({
           </div>
         </div>
 
-        {/* Info */}
+        {}
         <div className="mt-3 flex flex-col gap-0.5">
-          {/* Name */}
+          {}
           <h3 className="text-body-medium font-medium text-dark-900 group-hover:underline line-clamp-1">
             {name}
           </h3>
 
-          {/* Category */}
+          {}
           <p className="text-caption text-dark-700">{category}</p>
 
-          {/* Colour count */}
+          {}
           {colourCount !== undefined && (
             <p className="text-footnote text-dark-500">
               {colourCount} {colourCount === 1 ? "Colour" : "Colours"}
             </p>
           )}
 
-          {/* Price row */}
+          {}
           <div className="mt-1 flex items-center gap-2">
             <span
               className={`text-body-medium font-medium ${hasDiscount ? "text-red" : "text-dark-900"}`}

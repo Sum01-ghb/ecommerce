@@ -1,6 +1,11 @@
 import React from "react";
 import { db } from "@/db";
-import { products, categories, productVariants, productImages } from "@/lib/db/schema";
+import {
+  products,
+  categories,
+  productVariants,
+  productImages,
+} from "@/lib/db/schema";
 import Card from "@/components/Card";
 import type { CardProps } from "@/components/Card";
 import Image from "next/image";
@@ -9,12 +14,8 @@ import { AlertTriangle } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/actions";
 import { eq, and } from "drizzle-orm";
 
-// Force dynamic rendering because getCurrentUser() uses headers()
 export const dynamic = "force-dynamic";
 
-// ------------------------------------------------------------------
-// Static fallback data used when the DB is not yet connected
-// ------------------------------------------------------------------
 const FALLBACK_PRODUCTS: CardProps[] = [
   {
     id: 1,
@@ -74,9 +75,6 @@ const FALLBACK_PRODUCTS: CardProps[] = [
   },
 ];
 
-// ------------------------------------------------------------------
-// DB query with fallback
-// ------------------------------------------------------------------
 async function getProducts() {
   try {
     const rows = await db
@@ -89,11 +87,17 @@ async function getProducts() {
       })
       .from(products)
       .leftJoin(categories, eq(products.categoryId, categories.id))
-      .leftJoin(productVariants, eq(products.defaultVariantId, productVariants.id))
-      .leftJoin(productImages, and(
-        eq(productImages.productId, products.id),
-        eq(productImages.isPrimary, true)
-      ));
+      .leftJoin(
+        productVariants,
+        eq(products.defaultVariantId, productVariants.id),
+      )
+      .leftJoin(
+        productImages,
+        and(
+          eq(productImages.productId, products.id),
+          eq(productImages.isPrimary, true),
+        ),
+      );
     if (rows.length === 0)
       return { data: FALLBACK_PRODUCTS, usingFallback: true, empty: true };
     const mapped: CardProps[] = rows.map((p, i) => ({
@@ -112,18 +116,13 @@ async function getProducts() {
   }
 }
 
-// ------------------------------------------------------------------
-// Page
-// ------------------------------------------------------------------
 export default async function Home() {
   const { data, usingFallback } = await getProducts();
   const user = await getCurrentUser();
 
   return (
     <div className="flex-1">
-      {/* ── Hero ────────────────────────────────────────────────── */}
       <section className="relative w-full min-h-120 md:min-h-140 overflow-hidden bg-light-300">
-        {/* Background image */}
         <Image
           src="/hero-bg.png"
           alt=""
@@ -131,10 +130,8 @@ export default async function Home() {
           priority
           className="object-cover object-center"
         />
-        {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-light-100/80 via-light-100/40 to-transparent" />
 
-        {/* Hero shoe */}
         <div className="absolute right-0 inset-y-0 w-1/2 hidden sm:block">
           <Image
             src="/hero-shoe.png"
@@ -145,7 +142,6 @@ export default async function Home() {
           />
         </div>
 
-        {/* Content */}
         <div className="relative z-10 mx-auto max-w-360 px-4 sm:px-6 lg:px-16 h-full flex items-center py-20 sm:py-28">
           <div className="max-w-lg">
             <p className="text-caption font-medium text-green uppercase tracking-widest mb-2">
@@ -169,7 +165,6 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ── DB warning ─────────────────────────────────────────── */}
       {usingFallback && (
         <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-16 mt-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 rounded-sm border border-orange/40 bg-orange/5 px-4 py-3">
@@ -205,7 +200,6 @@ export default async function Home() {
         </div>
       )}
 
-      {/* ── Best of Air Max ────────────────────────────────────── */}
       <section
         id="collection"
         className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-16 py-12"
@@ -220,13 +214,12 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ── Trending Now ───────────────────────────────────────── */}
       <section className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-16 pb-16">
         <h2 className="text-heading-3 font-medium text-dark-900 mb-6">
           Trending Now
         </h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {/* Large feature card */}
+          {}
           <div className="relative col-span-1 md:row-span-2 aspect-[4/3] md:aspect-auto overflow-hidden rounded-sm bg-dark-900 min-h-[300px]">
             <Image
               src="/trending-1.png"
@@ -251,7 +244,6 @@ export default async function Home() {
             </div>
           </div>
 
-          {/* Two smaller trending cards */}
           <div className="relative aspect-[4/3] overflow-hidden rounded-sm bg-dark-700 min-h-[200px]">
             <Image
               src="/trending-2.png"
@@ -279,12 +271,11 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ── Feature CTA Banner ─────────────────────────────────── */}
       <section className="relative overflow-hidden bg-light-300 min-h-[400px]">
-        {/* Diagonal orange accent */}
+        {}
         <div className="absolute right-0 top-0 h-full w-1/3 bg-orange/20 skew-x-[-12deg] origin-top-right" />
 
-        {/* Feature shoe */}
+        {}
         <div className="absolute right-0 inset-y-0 w-1/2 hidden sm:block">
           <Image
             src="/feature.png"

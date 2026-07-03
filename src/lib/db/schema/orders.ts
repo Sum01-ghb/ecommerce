@@ -5,7 +5,6 @@ import { user } from "./user";
 import { addresses } from "./addresses";
 import { productVariants } from "./products";
 
-// ── Enums ─────────────────────────────────────────────────────────────────────
 export const orderStatusEnum = pgEnum("order_status", [
   "pending",
   "paid",
@@ -13,10 +12,6 @@ export const orderStatusEnum = pgEnum("order_status", [
   "delivered",
   "cancelled",
 ]);
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Orders
-// ─────────────────────────────────────────────────────────────────────────────
 
 export const orders = pgTable("orders", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -34,10 +29,6 @@ export const orders = pgTable("orders", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Order Items
-// ─────────────────────────────────────────────────────────────────────────────
-
 export const orderItems = pgTable("order_items", {
   id: uuid("id").primaryKey().defaultRandom(),
   orderId: uuid("order_id")
@@ -49,10 +40,6 @@ export const orderItems = pgTable("order_items", {
   quantity: integer("quantity").notNull(),
   priceAtPurchase: numeric("price_at_purchase", { precision: 10, scale: 2 }).notNull(),
 });
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Relations
-// ─────────────────────────────────────────────────────────────────────────────
 
 export const ordersRelations = relations(orders, ({ one, many }) => ({
   user: one(user, {
@@ -83,7 +70,6 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
   }),
 }));
 
-// ── Zod schemas ──────────────────────────────────────────────────────────────
 export const insertOrderSchema     = createInsertSchema(orders);
 export const selectOrderSchema     = createSelectSchema(orders);
 export const insertOrderItemSchema = createInsertSchema(orderItems);
@@ -92,4 +78,4 @@ export const selectOrderItemSchema = createSelectSchema(orderItems);
 export type Order        = typeof orders.$inferSelect;
 export type NewOrder     = typeof orders.$inferInsert;
 export type OrderItem    = typeof orderItems.$inferSelect;
-export type NewOrderItem = typeof orderItems.$inferInsert;
+export type NewOrderItem = typeof orderItems.$inferInsert;

@@ -1,23 +1,5 @@
 "use server";
 
-/**
- * cart.ts — Server actions for cart CRUD
- *
- * Session strategy
- * ────────────────
- * • Authenticated user  → cart row keyed by user_id
- * • Guest               → cart row keyed by guest_id (from guest_session cookie)
- * • On sign-in/sign-up  → guest cart is merged into user cart (handled in auth/actions.ts)
- *
- * All actions return a typed ActionResult so the client can handle
- * success and error states uniformly without try/catch on every call.
- *
- * Price handling
- * ──────────────
- * DB prices are NUMERIC strings ("105.00"). We convert to integer cents
- * for the Zustand store to stay consistent with the rest of the UI.
- */
-
 import { db } from "@/lib/db";
 import {
   carts,
@@ -33,37 +15,20 @@ import { and, eq } from "drizzle-orm";
 import { getCurrentUser, guestSession, createGuestSession } from "@/lib/auth/actions";
 import type { CartItem } from "@/store/cart.store";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
-
 export type CartActionResult<T = void> =
   | { success: true; data: T }
   | { success: false; error: string };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Internal helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
-/** Convert a NUMERIC DB string ("105.00") → integer cents (10500). */
 function toCents(value: string | null | undefined): number {
   if (!value) return 0;
   return Math.round(parseFloat(value) * 100);
 }
 
-/**
- * Resolve (or create) the cart row for the current session.
- * Returns the cart UUID regardless of whether it already existed.
- *
- * Precedence:
- *   1. Authenticated user  → find/create cart by user_id
- *   2. Guest               → find/create cart by guest_id (ensures guest session exists)
- */
 async function resolveCartId(): Promise<string> {
   const user = await getCurrentUser();
 
   if (user) {
-    // ── Authenticated ───────────────────────────────────────────────────
+
     const [existing] = await db
       .select({ id: carts.id })
       .from(carts)
@@ -80,10 +45,8 @@ async function resolveCartId(): Promise<string> {
     return created.id;
   }
 
-  // ── Guest ──────────────────────────────────────────────────────────────
   const guestToken = await createGuestSession();
 
-  // Fetch the guest row to get its UUID id
   const { guest } = await import("@/lib/db/schema");
   const [guestRow] = await db
     .select({ id: guest.id })
@@ -109,25 +72,15 @@ async function resolveCartId(): Promise<string> {
   return created.id;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// getCart
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Fetch all cart items for the current user/guest session.
- * Returns a fully-typed array ready for the Zustand store.
- */
 export async function getCart(): Promise<CartActionResult<CartItem[]>> {
   try {
     const user = await getCurrentUser();
     const guestToken = await guestSession();
 
-    // No session at all — return empty cart
     if (!user && !guestToken) {
       return { success: true, data: [] };
     }
 
-    // Find the cart row
     let cartRow: { id: string } | undefined;
 
     if (user) {
@@ -159,7 +112,6 @@ export async function getCart(): Promise<CartActionResult<CartItem[]>> {
       return { success: true, data: [] };
     }
 
-    // Fetch items with full product/variant details
     const rows = await db
       .select({
         cartItemId:       cartItems.id,
@@ -210,14 +162,6 @@ export async function getCart(): Promise<CartActionResult<CartItem[]>> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// addCartItem
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Add a product variant to the cart, or increment quantity if already present.
- * Returns the updated/created CartItem for immediate Zustand upsert.
- */
 export async function addCartItem(
   productVariantId: string,
   quantity = 1
@@ -225,7 +169,6 @@ export async function addCartItem(
   try {
     const cartId = await resolveCartId();
 
-    // Check if this variant is already in the cart
     const [existing] = await db
       .select({ id: cartItems.id, quantity: cartItems.quantity })
       .from(cartItems)
@@ -240,7 +183,7 @@ export async function addCartItem(
     let cartItemId: string;
 
     if (existing) {
-      // Increment quantity
+
       const newQty = existing.quantity + quantity;
       await db
         .update(cartItems)
@@ -248,7 +191,7 @@ export async function addCartItem(
         .where(eq(cartItems.id, existing.id));
       cartItemId = existing.id;
     } else {
-      // Insert new row
+
       const [inserted] = await db
         .insert(cartItems)
         .values({ cartId, productVariantId, quantity })
@@ -256,7 +199,6 @@ export async function addCartItem(
       cartItemId = inserted.id;
     }
 
-    // Return the full item shape for the store
     const itemResult = await getCartItemById(cartItemId);
     if (!itemResult) {
       return { success: false, error: "Failed to fetch updated cart item" };
@@ -269,14 +211,6 @@ export async function addCartItem(
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// updateCartItem
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Update the quantity of an existing cart item.
- * Pass quantity = 0 to remove the item.
- */
 export async function updateCartItem(
   cartItemDbId: string,
   quantity: number
@@ -298,13 +232,6 @@ export async function updateCartItem(
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// removeCartItem
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Remove a single item from the cart by its cart_items UUID.
- */
 export async function removeCartItem(
   cartItemDbId: string
 ): Promise<CartActionResult<{ cartItemDbId: string; quantity: number }>> {
@@ -317,13 +244,6 @@ export async function removeCartItem(
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// clearCart
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Remove all items from the current user/guest cart.
- */
 export async function clearCart(): Promise<CartActionResult> {
   try {
     const user = await getCurrentUser();
@@ -371,17 +291,6 @@ export async function clearCart(): Promise<CartActionResult> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// mergeGuestCartIntoUserCart
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Merge all items from a guest cart into the authenticated user's cart.
- * Called after successful sign-in or sign-up.
- *
- * Strategy: upsert — if the user already has the same variant in their cart,
- * add the guest quantity on top of the existing quantity.
- */
 export async function mergeGuestCartIntoUserCart(
   guestToken: string
 ): Promise<CartActionResult> {
@@ -391,25 +300,22 @@ export async function mergeGuestCartIntoUserCart(
 
     const { guest } = await import("@/lib/db/schema");
 
-    // Find guest row
     const [guestRow] = await db
       .select({ id: guest.id })
       .from(guest)
       .where(eq(guest.sessionToken, guestToken))
       .limit(1);
 
-    if (!guestRow) return { success: true, data: undefined }; // nothing to merge
+    if (!guestRow) return { success: true, data: undefined }; 
 
-    // Find guest cart
     const [guestCart] = await db
       .select({ id: carts.id })
       .from(carts)
       .where(eq(carts.guestId, guestRow.id))
       .limit(1);
 
-    if (!guestCart) return { success: true, data: undefined }; // no guest cart
+    if (!guestCart) return { success: true, data: undefined }; 
 
-    // Fetch guest cart items
     const guestCartItems = await db
       .select({
         productVariantId: cartItems.productVariantId,
@@ -420,7 +326,6 @@ export async function mergeGuestCartIntoUserCart(
 
     if (guestCartItems.length === 0) return { success: true, data: undefined };
 
-    // Find or create user cart
     let userCartId: string;
     const [userCart] = await db
       .select({ id: carts.id })
@@ -438,7 +343,6 @@ export async function mergeGuestCartIntoUserCart(
       userCartId = created.id;
     }
 
-    // Upsert each guest item into user cart
     for (const item of guestCartItems) {
       const [existing] = await db
         .select({ id: cartItems.id, quantity: cartItems.quantity })
@@ -467,7 +371,6 @@ export async function mergeGuestCartIntoUserCart(
       }
     }
 
-    // Clean up guest cart
     await db.delete(cartItems).where(eq(cartItems.cartId, guestCart.id));
     await db.delete(carts).where(eq(carts.id, guestCart.id));
 
@@ -477,10 +380,6 @@ export async function mergeGuestCartIntoUserCart(
     return { success: false, error: message };
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Internal: getCartItemById
-// ─────────────────────────────────────────────────────────────────────────────
 
 async function getCartItemById(cartItemId: string): Promise<CartItem | null> {
   const rows = await db
@@ -529,4 +428,4 @@ async function getCartItemById(cartItemId: string): Promise<CartItem | null> {
     quantity:         r.quantity,
     inStock:          r.variantInStock,
   };
-}
+}

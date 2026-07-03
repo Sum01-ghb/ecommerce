@@ -1,14 +1,5 @@
 import {pgTable, text, timestamp, uuid} from "drizzle-orm/pg-core";
 
-/**
- * `verification` — Better Auth verification table.
- *
- * Used post-MVP for email verification, password reset tokens, etc.
- * Schema is included now so migrations don't break when enabling these features.
- *
- * - `identifier`: target (e.g. email address)
- * - `value`: the token or OTP code to verify against
- */
 export const verification = pgTable("verification", {
   id: uuid("id").primaryKey(),
   identifier: text("identifier").notNull(),
@@ -19,4 +10,4 @@ export const verification = pgTable("verification", {
 });
 
 export type Verification = typeof verification.$inferSelect;
-export type NewVerification = typeof verification.$inferInsert;
+export type NewVerification = typeof verification.$inferInsert;

@@ -1,26 +1,7 @@
-/**
- * fix-image-urls.mjs
- *
- * One-time migration: updates product_images.url in the DB from the old
- * broken `/static/uploads/shoes/<slug>/primary.<ext>` paths to the correct
- * `/shoes/shoe-N.<ext>` paths that are committed in public/shoes/ and served
- * by Next.js / Vercel as static assets.
- *
- * Run once:  node scripts/fix-image-urls.mjs
- *
- * Safe to re-run — paths that already start with /shoes/ are skipped.
- */
-
 import 'dotenv/config';
 import pkg from 'pg';
 const { Client } = pkg;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Mapping: old slug-based path fragment → correct /shoes/shoe-N.ext URL
-//
-// Derived from src/db/seed.ts product order (index = shoe number).
-// The old seed produced:  /static/uploads/shoes/<slugified-name>/primary.<ext>
-// ─────────────────────────────────────────────────────────────────────────────
 const SLUG_TO_CORRECT_URL = {
   'nike-air-force-1-mid-07':             '/shoes/shoe-1.jpg',
   'nike-court-vision-low-next-nature':   '/shoes/shoe-2.webp',
@@ -39,34 +20,25 @@ const SLUG_TO_CORRECT_URL = {
   'nike-revolution-7':                   '/shoes/shoe-15.avif',
 };
 
-// Extra image for Nike Air Max 270 (extra-1 → shoe-5.avif)
 const EXTRA_SLUG_TO_CORRECT_URL = {
   'nike-air-max-270-extra-1': '/shoes/shoe-5.avif',
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helper: extract slug from old path
-//   /static/uploads/shoes/<slug>/primary.<ext>  → <slug>
-//   /static/uploads/shoes/<slug>/extra-N.<ext>  → <slug>-extra-N
-// ─────────────────────────────────────────────────────────────────────────────
 function extractKey(url) {
-  // Normalise slashes
+
   const parts = url.replace(/\\/g, '/').split('/');
-  // Expected: ['', 'static', 'uploads', 'shoes', '<slug>', '<file>']
+
   const slugIndex = parts.indexOf('shoes') + 1;
   const slug = parts[slugIndex] ?? '';
   const file = parts[slugIndex + 1] ?? '';
 
   if (file.startsWith('extra-')) {
-    const n = file.split('.')[0]; // e.g. "extra-1"
+    const n = file.split('.')[0]; 
     return `${slug}-${n}`;
   }
   return slug;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Main
-// ─────────────────────────────────────────────────────────────────────────────
 const client = new Client({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
@@ -75,7 +47,6 @@ const client = new Client({
 await client.connect();
 console.log('Connected to database.\n');
 
-// Fetch all rows that still need fixing
 const { rows } = await client.query(
   "SELECT id, url FROM product_images WHERE url LIKE '/static/uploads/%'"
 );
@@ -114,4 +85,4 @@ for (const row of rows) {
 
 await client.end();
 
-console.log(`\nDone. ${updated} updated, ${skipped} skipped.\n`);
+console.log(`\nDone. ${updated} updated, ${skipped} skipped.\n`);

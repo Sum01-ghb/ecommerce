@@ -1,70 +1,54 @@
-/**
- * productDetail.ts — Static mock data for the Product Details page.
- *
- * Each product has multiple colour variants, each with their own gallery images.
- * All prices are in cents (e.g. 14000 = $140.00).
- * Images reference files that exist in /public/shoes/.
- */
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
-
 export interface ProductVariantImage {
   src: string;
   alt: string;
 }
 
 export interface ProductVariant {
-  /** Slug used to identify this colour option */
+
   colorSlug: string;
-  /** Display name shown in UI */
+
   colorName: string;
-  /** Hex code used for the swatch */
+
   hexCode: string;
-  /** Gallery images for this colour variant (first = main image) */
+
   images: ProductVariantImage[];
 }
 
 export interface ProductSize {
-  /** Display label e.g. "5", "5.5", "W 7" */
+
   label: string;
-  /** Whether this size is available */
+
   available: boolean;
 }
 
 export interface ProductDetail {
   id: number;
   name: string;
-  /** Short subtitle, e.g. "Women's Shoes" */
+
   category: string;
-  /** Selling price in cents */
+
   price: number;
-  /** Original / compare-at price in cents (undefined = no discount) */
+
   originalPrice?: number;
-  /** Discount label shown in green, e.g. "Extra 20% off w/ code SPORT" */
+
   promoLabel?: string;
-  /** Badge variant — mirrors CardProps badge */
+
   badge?: "best-seller" | "sale" | "new";
-  /** Highlights shown in the collapsible "Product Details" section */
+
   highlights: string[];
-  /** Longer paragraph description */
+
   description: string;
-  /** Style/SKU code */
+
   styleCode: string;
-  /** Available colour variants (first = default) */
+
   variants: ProductVariant[];
-  /** Available sizes */
+
   sizes: ProductSize[];
-  /** Star rating out of 5 */
+
   rating: number;
-  /** Total number of reviews */
+
   reviewCount: number;
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Mock catalogue
-// ─────────────────────────────────────────────────────────────────────────────
 
 export const PRODUCT_DETAILS: Record<number, ProductDetail> = {
   1: {
@@ -214,10 +198,6 @@ export const PRODUCT_DETAILS: Record<number, ProductDetail> = {
   },
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Lookup helper — returns the first product as default for unknown IDs
-// ─────────────────────────────────────────────────────────────────────────────
-
 export function getProductDetail(id: number): ProductDetail {
   return PRODUCT_DETAILS[id] ?? PRODUCT_DETAILS[1];
-}
+}

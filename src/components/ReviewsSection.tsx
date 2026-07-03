@@ -1,27 +1,7 @@
-/**
- * ReviewsSection.tsx — Server component
- *
- * Renders the first 10 approved reviews for a product.
- * Consumed inside a <Suspense> boundary in the PDP so it never blocks
- * the main product content from rendering.
- *
- * Each review body that exceeds 160 characters is rendered inside a
- * <CollapsibleSection> so the list doesn't grow unwieldy.
- *
- * Accessibility:
- *   • Star rating uses aria-label for screen readers.
- *   • Review list is a <ul> with <li> items.
- *   • Relative dates use <time> with a machine-readable datetime.
- */
-
 import { Star } from "lucide-react";
 import { getProductReviews } from "@/lib/actions/product";
 import type { ReviewItem } from "@/lib/actions/product";
 import CollapsibleReviewText from "@/components/CollapsibleReviewText";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
 
 function StarRating({ rating, size = 13 }: { rating: number; size?: number }) {
   return (
@@ -59,10 +39,6 @@ function formatRelativeDate(iso: string): string {
   return date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Average rating summary
-// ─────────────────────────────────────────────────────────────────────────────
-
 function RatingSummary({ reviews }: { reviews: ReviewItem[] }) {
   if (reviews.length === 0) return null;
 
@@ -81,10 +57,6 @@ function RatingSummary({ reviews }: { reviews: ReviewItem[] }) {
     </div>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Single review card
-// ─────────────────────────────────────────────────────────────────────────────
 
 function ReviewCard({ review }: { review: ReviewItem }) {
   const isLong = review.content.length > 160;
@@ -117,10 +89,6 @@ function ReviewCard({ review }: { review: ReviewItem }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Main export — server component
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface ReviewsSectionProps {
   productId: string;
 }
@@ -150,4 +118,4 @@ export default async function ReviewsSection({ productId }: ReviewsSectionProps)
       </ul>
     </section>
   );
-}
+}

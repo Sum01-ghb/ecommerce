@@ -1,37 +1,17 @@
 "use client";
 
-/**
- * CollapsibleSection.tsx — Client component
- *
- * A single accordion-style section with an animated chevron toggle.
- * Used for "Product Details", "Shipping & Returns", and "Reviews".
- *
- * Accessibility:
- *   • Button has aria-expanded.
- *   • Content region has aria-hidden when collapsed.
- *   • Focusable with visible ring.
- */
-
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Props
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface CollapsibleSectionProps {
   title: string;
-  /** Render the section open by default */
+
   defaultOpen?: boolean;
-  /** Content to show when expanded */
+
   children: React.ReactNode;
-  /** Optional right-side slot (e.g. star rating in Reviews header) */
+
   headerSlot?: React.ReactNode;
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Component
-// ─────────────────────────────────────────────────────────────────────────────
 
 export default function CollapsibleSection({
   title,
@@ -68,7 +48,7 @@ export default function CollapsibleSection({
         </div>
       </button>
 
-      {/* Animated content panel */}
+      {}
       <div
         id={contentId}
         aria-hidden={!isOpen}
@@ -81,4 +61,4 @@ export default function CollapsibleSection({
       </div>
     </div>
   );
-}
+}

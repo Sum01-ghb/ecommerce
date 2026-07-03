@@ -26,7 +26,6 @@ export default function Navbar() {
     setProfileOpen(false);
   };
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
@@ -47,7 +46,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 bg-dark-900 text-light-100">
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-16">
         <div className="flex h-14 items-center justify-between gap-6">
-          {/* Logo */}
+          {}
           <Link href="/" className="flex-shrink-0 cursor-pointer" aria-label="Nike Home">
             <Image
               src="/logo.svg"
@@ -59,7 +58,7 @@ export default function Navbar() {
             />
           </Link>
 
-          {/* Desktop Nav Links */}
+          {}
           <nav
             aria-label="Primary navigation"
             className="hidden md:flex items-center gap-6"
@@ -75,9 +74,9 @@ export default function Navbar() {
             ))}
           </nav>
 
-          {/* Desktop Actions */}
+          {}
           <div className="hidden md:flex items-center gap-5">
-            {/* Profile / Sign In */}
+            {}
             {session ? (
               <div className="relative" ref={profileRef}>
                 <button
@@ -103,7 +102,7 @@ export default function Navbar() {
                   Profile
                 </button>
 
-                {/* Profile Dropdown */}
+                {}
                 {profileOpen && (
                   <div className="absolute right-0 top-full mt-2 w-56 bg-light-100 rounded-sm shadow-lg border border-light-400 py-2 z-50">
                     <div className="px-4 py-2 border-b border-light-300">
@@ -130,7 +129,7 @@ export default function Navbar() {
               </Link>
             )}
 
-            {/* Cart */}
+            {}
             <button
               onClick={toggleCart}
               aria-label={`Shopping cart, ${totalItems} items`}
@@ -160,7 +159,7 @@ export default function Navbar() {
             </button>
           </div>
 
-          {/* Mobile: cart + hamburger */}
+          {}
           <div className="flex md:hidden items-center gap-4">
             <button
               onClick={toggleCart}
@@ -232,7 +231,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Dropdown Menu */}
+      {}
       {mobileOpen && (
         <nav
           aria-label="Mobile navigation"

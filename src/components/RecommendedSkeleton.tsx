@@ -1,7 +1,3 @@
-/**
- * RecommendedSkeleton.tsx — Server/client compatible
- * Suspense fallback for <RecommendedProductsSection />.
- */
 export default function RecommendedSkeleton() {
   return (
     <section
@@ -21,4 +17,4 @@ export default function RecommendedSkeleton() {
       </div>
     </section>
   );
-}
+}

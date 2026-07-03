@@ -1,35 +1,12 @@
 "use client";
 
-/**
- * CartSummary.tsx — Order summary sidebar with Stripe Checkout button
- *
- * Auth-aware checkout flow
- * ────────────────────────
- * • Guest (isAuthenticated=false): clicking "Proceed to Checkout" immediately
- *   redirects to /sign-in?callbackUrl=/cart — no server action is called,
- *   no Stripe session is created, no email field is shown.
- * • Authenticated: calls createStripeCheckoutSession() and redirects to
- *   Stripe's hosted checkout page.
- *
- * isAuthenticated is resolved server-side in cart/page.tsx so there is
- * zero flicker and no client-side auth round-trip before the redirect.
- */
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Lock, AlertCircle, LogIn } from "lucide-react";
 import { createStripeCheckoutSession } from "@/lib/actions/checkout";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Constants
-// ─────────────────────────────────────────────────────────────────────────────
-
 const DELIVERY_FEE_CENTS = 200;
-const FREE_DELIVERY_THRESHOLD = 5000; // $50.00
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
+const FREE_DELIVERY_THRESHOLD = 5000; 
 
 function formatPrice(cents: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -39,20 +16,12 @@ function formatPrice(cents: number): string {
   }).format(cents / 100);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Props
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface CartSummaryProps {
   subtotalCents: number;
   itemCount: number;
-  /** Resolved server-side — true when a valid auth session exists */
+
   isAuthenticated: boolean;
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Component
-// ─────────────────────────────────────────────────────────────────────────────
 
 export default function CartSummary({
   subtotalCents,
@@ -68,11 +37,9 @@ export default function CartSummary({
   const total = subtotalCents + deliveryFee;
   const isEmpty = itemCount === 0 || subtotalCents === 0;
 
-  // ── Checkout handler ──────────────────────────────────────────────────────
   async function handleCheckout() {
     if (isEmpty || isLoading) return;
 
-    // Guest: redirect to sign-in immediately — never touch Stripe
     if (!isAuthenticated) {
       router.push("/sign-in?callbackUrl=/cart");
       return;
@@ -85,7 +52,7 @@ export default function CartSummary({
       const result = await createStripeCheckoutSession();
 
       if (!result.success) {
-        // Fallback: if auth somehow expired between page load and click
+
         if (result.redirect) {
           router.push(result.redirect);
           return;
@@ -94,7 +61,6 @@ export default function CartSummary({
         return;
       }
 
-      // Hard-navigate to Stripe hosted checkout page
       window.location.href = result.url;
     } catch {
       setError("Something went wrong. Please try again.");
@@ -103,7 +69,6 @@ export default function CartSummary({
     }
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <aside
       aria-label="Order summary"
@@ -113,12 +78,12 @@ export default function CartSummary({
         h-fit sticky top-24
       "
     >
-      {/* Title */}
+      {}
       <h2 className="text-body-medium font-medium text-dark-900 mb-5">
         Summary
       </h2>
 
-      {/* Line items */}
+      {}
       <div className="space-y-3 mb-5">
         <div className="flex justify-between items-center">
           <span className="text-body text-dark-900">Subtotal</span>
@@ -155,7 +120,7 @@ export default function CartSummary({
         </div>
       </div>
 
-      {/* Free delivery nudge */}
+      {}
       {subtotalCents > 0 && subtotalCents < FREE_DELIVERY_THRESHOLD && (
         <p className="text-footnote text-dark-700 bg-light-200 rounded-sm px-3 py-2 mb-4">
           Add{" "}
@@ -166,7 +131,7 @@ export default function CartSummary({
         </p>
       )}
 
-      {/* Sign-in nudge for guests */}
+      {}
       {!isAuthenticated && !isEmpty && (
         <div className="flex items-start gap-2 rounded-sm bg-light-200 border border-light-300 px-3 py-2.5 mb-4">
           <LogIn size={15} className="flex-shrink-0 text-dark-700 mt-0.5" aria-hidden="true" />
@@ -176,7 +141,7 @@ export default function CartSummary({
         </div>
       )}
 
-      {/* Error alert */}
+      {}
       {error && (
         <div
           role="alert"
@@ -191,7 +156,7 @@ export default function CartSummary({
         </div>
       )}
 
-      {/* CTA button — label changes for guests */}
+      {}
       <button
         onClick={handleCheckout}
         disabled={isEmpty || isLoading}
@@ -234,7 +199,7 @@ export default function CartSummary({
         )}
       </button>
 
-      {/* Trust badge — only shown to authenticated users going to Stripe */}
+      {}
       {isAuthenticated && (
         <div className="flex items-center justify-center gap-1.5 mt-3">
           <Lock size={11} className="text-dark-500" aria-hidden="true" />
@@ -243,4 +208,4 @@ export default function CartSummary({
       )}
     </aside>
   );
-}
+}

@@ -1,13 +1,10 @@
 "use client";
 import React, { useState, useId, useTransition } from "react";
 import Link from "next/link";
-import { Eye, EyeOff, Loader2 } from "lucide-react";import SocialProviders from "@/components/SocialProviders";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+import SocialProviders from "@/components/SocialProviders";
 import { signIn, signUp } from "@/lib/auth/actions";
 import { useCartStore } from "@/store/cart.store";
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
 
 export type AuthMode = "sign-in" | "sign-up";
 
@@ -15,10 +12,6 @@ export interface AuthFormProps {
   mode: AuthMode;
   callbackUrl?: string;
 }
-
-// ---------------------------------------------------------------------------
-// InputField sub-component
-// ---------------------------------------------------------------------------
 
 interface InputFieldProps {
   id: string;
@@ -98,10 +91,6 @@ function InputField({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Divider
-// ---------------------------------------------------------------------------
-
 function Divider() {
   return (
     <div className="relative flex items-center gap-3 my-1">
@@ -112,33 +101,22 @@ function Divider() {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Main component
-// ---------------------------------------------------------------------------
-
-export default function AuthForm({
-  mode,
-  callbackUrl = "/",
-}: AuthFormProps) {
+export default function AuthForm({ mode, callbackUrl = "/" }: AuthFormProps) {
   const uid = useId();
   const isSignUp = mode === "sign-up";
   const [isPending, startTransition] = useTransition();
 
-  // Cart items are serialised and sent to the server action for merging
   const cartItems = useCartStore((s) => s.items);
   const clearCart = useCartStore((s) => s.clearItems);
 
-  // ── Field state ──────────────────────────────────────────────────────────
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  // ── Error / status state ─────────────────────────────────────────────────
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
 
-  // ── Client-side validation (mirrors server schema) ───────────────────────
   function validate(): Record<string, string> {
     const errs: Record<string, string> = {};
     if (isSignUp && !name.trim()) errs.name = "Full name is required.";
@@ -155,7 +133,6 @@ export default function AuthForm({
     return errs;
   }
 
-  // ── Submit handler ───────────────────────────────────────────────────────
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setFormError(null);
@@ -167,7 +144,6 @@ export default function AuthForm({
     }
     setFieldErrors({});
 
-    // Serialise guest cart so the server can merge it
     const guestCartJson = JSON.stringify(cartItems);
 
     startTransition(async () => {
@@ -187,7 +163,6 @@ export default function AuthForm({
             setFieldErrors(flat);
           }
         } else {
-          // Redirect handled server-side; clear cart optimistically
           clearCart();
         }
       } else {
@@ -212,7 +187,6 @@ export default function AuthForm({
     });
   }
 
-  // ── Copy ─────────────────────────────────────────────────────────────────
   const heading = isSignUp ? "Create your account" : "Welcome back";
   const subheading = isSignUp
     ? "Sign up to start shopping Nike."
@@ -228,21 +202,23 @@ export default function AuthForm({
 
   return (
     <div className="space-y-7">
-      {/* Heading */}
       <div className="space-y-1">
         <h1 className="text-heading-3 font-medium text-dark-900">{heading}</h1>
         <p className="text-body text-dark-700">{subheading}</p>
       </div>
 
-      {/* Social providers */}
-      <SocialProviders action={isSignUp ? "Sign up" : "Sign in"} callbackUrl={callbackUrl} />
+      {}
+      <SocialProviders
+        action={isSignUp ? "Sign up" : "Sign in"}
+        callbackUrl={callbackUrl}
+      />
 
-      {/* Divider */}
+      {}
       <Divider />
 
-      {/* Email / password form */}
+      {}
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
-        {/* Form-level error */}
+        {}
         {formError && (
           <div
             role="alert"
@@ -253,7 +229,7 @@ export default function AuthForm({
           </div>
         )}
 
-        {/* Name (sign-up only) */}
+        {}
         {isSignUp && (
           <InputField
             id={`${uid}-name`}
@@ -268,7 +244,7 @@ export default function AuthForm({
           />
         )}
 
-        {/* Email */}
+        {}
         <InputField
           id={`${uid}-email`}
           label="Email address"
@@ -282,7 +258,7 @@ export default function AuthForm({
           disabled={isPending}
         />
 
-        {/* Password */}
+        {}
         <InputField
           id={`${uid}-password`}
           label="Password"
@@ -306,7 +282,7 @@ export default function AuthForm({
           }
         />
 
-        {/* Forgot password link (sign-in only) */}
+        {}
         {!isSignUp && (
           <div className="flex justify-end">
             <Link
@@ -318,7 +294,6 @@ export default function AuthForm({
           </div>
         )}
 
-        {/* Submit */}
         <button
           type="submit"
           disabled={isPending}
@@ -339,7 +314,6 @@ export default function AuthForm({
         </button>
       </form>
 
-      {/* Switch mode */}
       <p className="text-center text-caption text-dark-700">
         {switchText}{" "}
         <Link
@@ -350,7 +324,6 @@ export default function AuthForm({
         </Link>
       </p>
 
-      {/* Terms (sign-up only) */}
       {isSignUp && (
         <p className="text-center text-footnote text-dark-500 leading-relaxed">
           By creating an account, you agree to Nike&apos;s{" "}

@@ -1,36 +1,11 @@
 "use client";
 
-/**
- * SocialProviders.tsx — Google & Apple OAuth buttons
- *
- * Uses Better Auth's browser client (`authClient.signIn.social`) to kick
- * off the OAuth redirect flow.  The provider buttons are only rendered when
- * the corresponding env vars are configured — if neither is set the component
- * renders nothing so the sign-in page degrades gracefully to email-only.
- *
- * Environment variables that activate each button:
- *   Google → NEXT_PUBLIC_GOOGLE_ENABLED=true
- *   Apple  → NEXT_PUBLIC_APPLE_ENABLED=true
- *
- * Those flags are set to true on the server side only when the matching
- * secret env vars (GOOGLE_CLIENT_ID etc.) are present, keeping secrets
- * out of client bundles.
- */
-
 import React, { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Feature flags — driven by public env vars so the bundle stays secret-free
-// ─────────────────────────────────────────────────────────────────────────────
-
 const GOOGLE_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_ENABLED === "true";
 const APPLE_ENABLED  = process.env.NEXT_PUBLIC_APPLE_ENABLED  === "true";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SVG brand icons
-// ─────────────────────────────────────────────────────────────────────────────
 
 function GoogleIcon() {
   return (
@@ -78,14 +53,10 @@ function AppleIcon() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Component
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface SocialProvidersProps {
-  /** Verb shown on button: "Sign in" | "Sign up" | "Continue" */
+
   action?: string;
-  /** Where to send the user after a successful OAuth login */
+
   callbackUrl?: string;
 }
 
@@ -98,7 +69,6 @@ export default function SocialProviders({
   >(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Nothing to render if neither provider is configured
   if (!GOOGLE_ENABLED && !APPLE_ENABLED) return null;
 
   async function handleSocialSignIn(provider: "google" | "apple") {
@@ -110,10 +80,10 @@ export default function SocialProviders({
       await authClient.signIn.social({
         provider,
         callbackURL: callbackUrl,
-        // errorCallbackURL shown when the provider returns an error
+
         errorCallbackURL: "/sign-in?error=oauth",
       });
-      // Better Auth handles the redirect — execution stops here
+
     } catch (err) {
       const msg =
         err instanceof Error
@@ -126,14 +96,14 @@ export default function SocialProviders({
 
   return (
     <div className="space-y-3">
-      {/* Error */}
+      {}
       {error && (
         <p role="alert" className="text-footnote text-red text-center">
           {error}
         </p>
       )}
 
-      {/* Google */}
+      {}
       {GOOGLE_ENABLED && (
         <button
           type="button"
@@ -161,7 +131,7 @@ export default function SocialProviders({
         </button>
       )}
 
-      {/* Apple */}
+      {}
       {APPLE_ENABLED && (
         <button
           type="button"
@@ -190,4 +160,4 @@ export default function SocialProviders({
       )}
     </div>
   );
-}
+}

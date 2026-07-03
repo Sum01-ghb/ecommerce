@@ -1,11 +1,3 @@
-/**
- * RecommendedProductsSection.tsx — Server component
- *
- * Fetches and renders "You Might Also Like" product cards.
- * Loaded inside a <Suspense> boundary so it never blocks PDP rendering.
- * Silently hides itself when no valid recommendations are found.
- */
-
 import Card from "@/components/Card";
 import { getRecommendedProducts } from "@/lib/actions/product";
 
@@ -18,7 +10,6 @@ export default async function RecommendedProductsSection({
 }: RecommendedProductsSectionProps) {
   const products = await getRecommendedProducts(productId);
 
-  // Hide the section entirely if there's nothing to show
   if (products.length === 0) return null;
 
   return (
@@ -51,4 +42,4 @@ export default async function RecommendedProductsSection({
       </ul>
     </section>
   );
-}
+}

@@ -64,7 +64,7 @@ export default function Footer() {
 
   return (
     <footer className="bg-dark-900 text-light-100">
-      {/* Main grid */}
+      {}
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-16 pt-12 pb-8">
         <div className="grid grid-cols-2 gap-y-10 gap-x-6 sm:grid-cols-2 md:grid-cols-4">
           {FOOTER_SECTIONS.map((section) => (
@@ -89,10 +89,10 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Bottom bar */}
+      {}
       <div className="border-t border-white/10">
         <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-16 py-5 flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between">
-          {/* Logo + copyright */}
+          {}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-5">
             <Image
               src="/logo.svg"
@@ -106,7 +106,7 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Social icons */}
+          {}
           <div className="flex items-center gap-4">
             {SOCIAL_LINKS.map((social) => (
               <Link

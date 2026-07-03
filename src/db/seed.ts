@@ -1,22 +1,3 @@
-/**
- * seed.ts — Populates the database with realistic Nike product data.
- *
- * Run with:  npm run db:seed
- *
- * What it seeds
- * ─────────────
- *  • 1 brand   : Nike
- *  • 4 genders : Men, Women, Kids, Unisex
- *  • 6 colors  : White, Black, Red, Blue, Grey, Green
- *  • 8 sizes   : US 6–13 (shoe sizes)
- *  • 4 categories: Footwear > Lifestyle / Running / Basketball / Trail
- *  • 2 collections: Summer '25, Classics
- *  • 15 Nike products with realistic variants, images, and collection links
- *
- * Images are copied from public/shoes/ → static/uploads/ so the app can
- * serve them as static assets without needing a CDN.
- */
-
 import "dotenv/config";
 import { v4 as uuidv4 } from "uuid";
 import { eq } from "drizzle-orm";
@@ -33,10 +14,6 @@ import {
   productImages,
   productCollections,
 } from "./index";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
 
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -57,23 +34,11 @@ function slugify(str: string): string {
     .replace(/(^-|-$)/g, "");
 }
 
-/**
- * Resolve a public-folder image path to the URL that Next.js / Vercel will serve.
- *
- * Images live in public/shoes/ and are committed to the repo, so they are
- * always available at /shoes/<filename> on any deployment — no file-copy needed.
- *
- * Example: "public/shoes/shoe-1.jpg" → "/shoes/shoe-1.jpg"
- */
 function resolveImageUrl(srcRelative: string): string {
-  // Strip the leading "public" segment so the URL is relative to the web root
-  const withoutPublic = srcRelative.replace(/^public\//, "");
+
+  const withoutPublic = srcRelative.replace(/^public\
   return `/${withoutPublic}`;
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Static data definitions
-// ─────────────────────────────────────────────────────────────────────────────
 
 const BRAND_ID      = uuidv4();
 const GENDER_IDS    = { men: uuidv4(), women: uuidv4(), kids: uuidv4(), unisex: uuidv4() };
@@ -93,10 +58,6 @@ const CAT_IDS       = {
   trail: uuidv4(),
 };
 const COLLECTION_IDS = { summer25: uuidv4(), classics: uuidv4() };
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Seed row builders
-// ─────────────────────────────────────────────────────────────────────────────
 
 const brandRows = [
   { id: BRAND_ID, name: "Nike", slug: "nike", logoUrl: "/static/uploads/brands/nike-logo.svg" },
@@ -142,17 +103,13 @@ const collectionRows = [
   { id: COLLECTION_IDS.classics, name: "Classics",     slug: "classics" },
 ];
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Product catalogue
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface ProductSeed {
   name: string;
   description: string;
   categoryId: string;
   genderId: string;
   basePrice: string;
-  image: string;        // relative to public/
+  image: string;        
   extraImages?: string[];
   collectionId?: string;
 }
@@ -309,7 +266,6 @@ const productSeeds: ProductSeed[] = [
   },
 ];
 
-// Map colour pools per gender to keep seed data realistic
 const GENDER_COLOR_POOL: Record<string, string[]> = {
   [GENDER_IDS.men]:    [COLOR_IDS.black, COLOR_IDS.white, COLOR_IDS.grey, COLOR_IDS.blue],
   [GENDER_IDS.women]:  [COLOR_IDS.white, COLOR_IDS.red,   COLOR_IDS.grey, COLOR_IDS.green],
@@ -319,14 +275,9 @@ const GENDER_COLOR_POOL: Record<string, string[]> = {
 
 const SIZE_POOL = Object.values(SIZE_IDS);
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Main
-// ─────────────────────────────────────────────────────────────────────────────
-
 async function main() {
   console.log("\n🌱  Starting database seed…\n");
 
-  // ── 1. Clear existing commerce data (order matters for FK constraints) ──────
   console.log("🗑   Clearing existing commerce data…");
   await db.delete(productCollections);
   await db.delete(productImages);
@@ -340,7 +291,6 @@ async function main() {
   await db.delete(sizes);
   console.log("    ✓ Cleared\n");
 
-  // ── 2. Filters ────────────────────────────────────────────────────────────
   console.log("📦  Seeding brands…");
   await db.insert(brands).values(brandRows);
   console.log(`    ✓ ${brandRows.length} brand(s)\n`);
@@ -357,20 +307,17 @@ async function main() {
   await db.insert(sizes).values(sizeRows);
   console.log(`    ✓ ${sizeRows.length} sizes\n`);
 
-  // ── 3. Categories (parent first) ──────────────────────────────────────────
   console.log("📦  Seeding categories…");
-  // Insert parent before children
+
   const [parentCat, ...childCats] = categoryRows;
   await db.insert(categories).values(parentCat);
   await db.insert(categories).values(childCats);
   console.log(`    ✓ ${categoryRows.length} categories\n`);
 
-  // ── 4. Collections ────────────────────────────────────────────────────────
   console.log("📦  Seeding collections…");
   await db.insert(collections).values(collectionRows);
   console.log(`    ✓ ${collectionRows.length} collections\n`);
 
-  // ── 5. Products, variants & images ───────────────────────────────────────
   console.log("👟  Seeding products…\n");
 
   for (const seed of productSeeds) {
@@ -379,7 +326,6 @@ async function main() {
     const pickedColors = pickMany(colorPool, 2, 3);
     const pickedSizes  = pickMany(SIZE_POOL, 3, 6);
 
-    // ── 5a. Insert product (defaultVariantId set later) ───────────────────
     await db.insert(products).values({
       id: productId,
       name: seed.name,
@@ -390,7 +336,6 @@ async function main() {
       isPublished: true,
     });
 
-    // ── 5b. Variants: one per (color × size) combination ─────────────────
     let firstVariantId: string | null = null;
     const variantIds: string[] = [];
 
@@ -421,7 +366,6 @@ async function main() {
       }
     }
 
-    // ── 5c. Set default variant ────────────────────────────────────────────
     if (firstVariantId) {
       await db
         .update(products)
@@ -429,10 +373,8 @@ async function main() {
         .where(eq(products.id, productId));
     }
 
-    // ── 5d. Images — resolve /shoes/ paths directly from public/ ─────────
     const imgUrl = resolveImageUrl(seed.image);
 
-    // Primary image (not tied to a specific variant)
     await db.insert(productImages).values({
       id: uuidv4(),
       productId,
@@ -442,7 +384,6 @@ async function main() {
       isPrimary: true,
     });
 
-    // Extra images tied to the first variant (variant gallery)
     if (seed.extraImages) {
       for (let i = 0; i < seed.extraImages.length; i++) {
         const extraUrl = resolveImageUrl(seed.extraImages[i]);
@@ -458,7 +399,6 @@ async function main() {
       }
     }
 
-    // ── 5e. Collection membership ─────────────────────────────────────────
     if (seed.collectionId) {
       await db.insert(productCollections).values({
         id: uuidv4(),

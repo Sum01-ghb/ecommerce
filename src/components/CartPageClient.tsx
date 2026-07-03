@@ -1,13 +1,5 @@
 "use client";
 
-/**
- * CartPageClient.tsx
- *
- * Interactive cart page content.
- * - Initializes the Zustand store from SSR-fetched items.
- * - Renders the item list and CartSummary sidebar (with Stripe integration).
- */
-
 import { useEffect } from "react";
 import Link from "next/link";
 import { ShoppingBag } from "lucide-react";
@@ -15,10 +7,6 @@ import { useCartStore, type CartItem } from "@/store/cart.store";
 import CartItemRow from "@/components/CartItemRow";
 import CartSummary from "@/components/CartSummary";
 import { clearCart } from "@/lib/actions/cart";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Empty state
-// ─────────────────────────────────────────────────────────────────────────────
 
 function EmptyCart() {
   return (
@@ -49,10 +37,6 @@ function EmptyCart() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Main client component
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface CartPageClientProps {
   initialItems: CartItem[];
   isAuthenticated: boolean;
@@ -61,13 +45,11 @@ interface CartPageClientProps {
 export default function CartPageClient({ initialItems, isAuthenticated }: CartPageClientProps) {
   const { items, setItems } = useCartStore();
 
-  // Hydrate store with SSR data on first render
   useEffect(() => {
     setItems(initialItems);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 
-  // Use store items (live) after hydration; fall back to SSR data on very first render
   const displayItems = items.length > 0 ? items : initialItems;
 
   const subtotalCents = displayItems.reduce(
@@ -86,9 +68,9 @@ export default function CartPageClient({ initialItems, isAuthenticated }: CartPa
 
   return (
     <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
-      {/* ── Items list ──────────────────────────────────────────────────── */}
+      {}
       <div className="flex-1 min-w-0">
-        {/* List header */}
+        {}
         <div className="flex items-center justify-between mb-2">
           <p className="text-caption text-dark-700">
             {displayItems.length}{" "}
@@ -102,14 +84,14 @@ export default function CartPageClient({ initialItems, isAuthenticated }: CartPa
           </button>
         </div>
 
-        {/* Cart rows */}
+        {}
         <div className="bg-light-100 border border-light-300 rounded-sm px-4 sm:px-6">
           {displayItems.map((item) => (
             <CartItemRow key={item.cartItemDbId} item={item} />
           ))}
         </div>
 
-        {/* Continue shopping */}
+        {}
         <div className="mt-5">
           <Link
             href="/products"
@@ -123,7 +105,7 @@ export default function CartPageClient({ initialItems, isAuthenticated }: CartPa
         </div>
       </div>
 
-      {/* ── Order summary with Stripe Checkout ─────────────────────────── */}
+      {}
       <CartSummary
         subtotalCents={subtotalCents}
         itemCount={displayItems.length}
@@ -131,4 +113,4 @@ export default function CartPageClient({ initialItems, isAuthenticated }: CartPa
       />
     </div>
   );
-}
+}

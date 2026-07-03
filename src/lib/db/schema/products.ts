@@ -20,19 +20,6 @@ import { colors } from "./filters/colors";
 import { sizes } from "./filters/sizes";
 import { user } from "./user";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Products
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * `products` — master product record.
- *
- * `default_variant_id` is a nullable FK back to `product_variants` that
- * designates the variant shown first on the PDP. Because the `product_variants`
- * table references `products.id`, this creates a two-table circular dependency.
- * Drizzle handles it via deferred constraints — we set the column here and add
- * the FK reference in the `productVariants` table to break the cycle.
- */
 export const products = pgTable("products", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
@@ -47,29 +34,20 @@ export const products = pgTable("products", {
     .notNull()
     .references(() => brands.id, { onDelete: "restrict" }),
   isPublished: boolean("is_published").notNull().default(false),
-  /**
-   * Nullable FK to product_variants.id.
-   * The FK constraint is declared on `productVariants` to avoid a forward reference.
-   * Here we store the UUID value only.
-   */
+
   defaultVariantId: uuid("default_variant_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
 }, (table) => ({
-  // Compound indexes for filtering queries
+
   brandPublishedIdx: index("products_brand_published_idx").on(table.brandId, table.isPublished),
   categoryPublishedIdx: index("products_category_published_idx").on(table.categoryId, table.isPublished),
   genderPublishedIdx: index("products_gender_published_idx").on(table.genderId, table.isPublished),
   createdAtIdx: index("products_created_at_idx").on(table.createdAt),
 }));
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Product Variants
-// ─────────────────────────────────────────────────────────────────────────────
-
-/** Dimensions stored as JSONB: { length, width, height } in cm/inches. */
 export interface Dimensions {
   length: number;
   width: number;
@@ -91,28 +69,24 @@ export const productVariants = pgTable("product_variants", {
     .notNull()
     .references(() => sizes.id, { onDelete: "restrict" }),
   inStock: integer("in_stock").notNull().default(0),
-  weight: real("weight"),                 // kg
+  weight: real("weight"),                 
   dimensions: jsonb("dimensions").$type<Dimensions>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
-  // Index for filtering by color and product
+
   colorProductIdx: index("product_variants_color_product_idx").on(table.colorId, table.productId),
-  // Index for filtering by size
+
   sizeProductIdx: index("product_variants_size_product_idx").on(table.sizeId, table.productId),
-  // Index for price sorting
+
   priceIdx: index("product_variants_price_idx").on(table.price),
 }));
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Product Images
-// ─────────────────────────────────────────────────────────────────────────────
 
 export const productImages = pgTable("product_images", {
   id: uuid("id").primaryKey().defaultRandom(),
   productId: uuid("product_id")
     .notNull()
     .references(() => products.id, { onDelete: "cascade" }),
-  /** Optional: image can be tied to a specific variant (e.g. color swatch). */
+
   variantId: uuid("variant_id").references(() => productVariants.id, {
     onDelete: "set null",
   }),
@@ -120,15 +94,11 @@ export const productImages = pgTable("product_images", {
   sortOrder: integer("sort_order").notNull().default(0),
   isPrimary: boolean("is_primary").notNull().default(false),
 }, (table) => ({
-  // Index for querying images by product
+
   productIdIdx: index("product_images_product_id_idx").on(table.productId),
-  // Index for querying images by variant (color-specific images)
+
   variantIdIdx: index("product_images_variant_id_idx").on(table.variantId),
 }));
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Relations
-// ─────────────────────────────────────────────────────────────────────────────
 
 export const productsRelations = relations(products, ({ one, many }) => ({
   category: one(categories, {
@@ -179,10 +149,6 @@ export const productImagesRelations = relations(productImages, ({ one }) => ({
   }),
 }));
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Zod schemas
-// ─────────────────────────────────────────────────────────────────────────────
-
 export const insertProductSchema = createInsertSchema(products);
 export const selectProductSchema = createSelectSchema(products);
 
@@ -195,13 +161,9 @@ export const selectProductVariantSchema = createSelectSchema(productVariants);
 export const insertProductImageSchema = createInsertSchema(productImages);
 export const selectProductImageSchema = createSelectSchema(productImages);
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
-
 export type Product           = typeof products.$inferSelect;
 export type NewProduct        = typeof products.$inferInsert;
 export type ProductVariant    = typeof productVariants.$inferSelect;
 export type NewProductVariant = typeof productVariants.$inferInsert;
 export type ProductImage      = typeof productImages.$inferSelect;
-export type NewProductImage   = typeof productImages.$inferInsert;
+export type NewProductImage   = typeof productImages.$inferInsert;

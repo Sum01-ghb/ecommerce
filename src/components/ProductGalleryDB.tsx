@@ -1,39 +1,9 @@
 "use client";
 
-/**
- * ProductGalleryDB.tsx — Client component
- *
- * Drop-in gallery for the PDP that consumes the DB shape directly:
- *   - `images`          → ProductImageDetail[] from getProduct()
- *   - `availableColors` → array of { id, name, slug, hexCode }
- *
- * How image↔color association works
- * ─────────────────────────────────
- * The DB model ties an image to a specific variant via `variantId`.
- * A variant has a `colorId`. So an image belongs to a color when
- * `image.variantId` is in the set of variant IDs for that color.
- *
- * We receive `variantColorMap` (variantId → colorId) so we can
- * group images by color client-side without an extra fetch.
- *
- * When a color is selected the gallery shows:
- *   1. Images whose variantId maps to that color (sorted by sortOrder).
- *   2. Fallback: images with no variantId (generic product shots).
- *
- * Accessibility:
- *   • Thumbnail buttons are keyboard-navigable (Arrow keys).
- *   • Swatch buttons carry aria-label + aria-pressed.
- *   • Missing-image state renders <GalleryEmptyState />.
- */
-
 import { useState, useCallback } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, Check, ImageOff } from "lucide-react";
 import type { ProductImageDetail } from "@/lib/actions/product";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Props
-// ─────────────────────────────────────────────────────────────────────────────
 
 export interface ColorOption {
   id: string;
@@ -45,15 +15,11 @@ export interface ColorOption {
 interface ProductGalleryDBProps {
   images: ProductImageDetail[];
   availableColors: ColorOption[];
-  /** variantId → colorId mapping, so we can group images by color */
+
   variantColorMap: Record<string, string>;
-  /** Optional badge text shown over the main image */
+
   badge?: string;
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Skeleton
-// ─────────────────────────────────────────────────────────────────────────────
 
 export function ProductGalleryDBSkeleton() {
   return (
@@ -68,10 +34,6 @@ export function ProductGalleryDBSkeleton() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Empty state
-// ─────────────────────────────────────────────────────────────────────────────
-
 function GalleryEmptyState() {
   return (
     <div className="flex flex-col items-center justify-center aspect-square w-full bg-light-200 rounded-sm gap-3">
@@ -80,10 +42,6 @@ function GalleryEmptyState() {
     </div>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Thumbnail
-// ─────────────────────────────────────────────────────────────────────────────
 
 interface ThumbnailProps {
   image: ProductImageDetail;
@@ -121,10 +79,6 @@ function Thumbnail({ image, index, isActive, onSelect, onKeyDown, total }: Thumb
     </button>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Color swatch
-// ─────────────────────────────────────────────────────────────────────────────
 
 interface SwatchProps {
   color: ColorOption;
@@ -172,10 +126,6 @@ function Swatch({ color, previewImage, isActive, onSelect }: SwatchProps) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Main component
-// ─────────────────────────────────────────────────────────────────────────────
-
 export default function ProductGalleryDB({
   images,
   availableColors,
@@ -185,7 +135,6 @@ export default function ProductGalleryDB({
   const [activeColorIndex, setActiveColorIndex] = useState(0);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
-  // ── Derive the image set for the active color ─────────────────────────
   const activeColor = availableColors[activeColorIndex];
 
   const colorImages: ProductImageDetail[] = activeColor
@@ -198,7 +147,6 @@ export default function ProductGalleryDB({
         .sort((a, b) => a.sortOrder - b.sortOrder)
     : [];
 
-  // Fallback to generic images (no variantId) if color has no images
   const genericImages = images
     .filter((img) => img.variantId === null)
     .sort((a, b) => a.sortOrder - b.sortOrder);
@@ -209,7 +157,6 @@ export default function ProductGalleryDB({
   const activeImage = displayImages[activeImageIndex] ?? displayImages[0];
   const safeIndex   = Math.min(activeImageIndex, Math.max(0, displayImages.length - 1));
 
-  // ── Handlers ────────────────────────────────────────────────────────────
   const handleColorChange = useCallback((idx: number) => {
     setActiveColorIndex(idx);
     setActiveImageIndex(0);
@@ -238,7 +185,6 @@ export default function ProductGalleryDB({
     [displayImages.length]
   );
 
-  // ── Guard ────────────────────────────────────────────────────────────────
   if (displayImages.length === 0) {
     return (
       <div className="flex flex-col gap-4">
@@ -249,12 +195,12 @@ export default function ProductGalleryDB({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* ── Gallery layout ──────────────────────────────────────────────── */}
-      {/* Mobile: main image on top, thumbnail row below */}
-      {/* Desktop: vertical thumbnail strip on left, main image on right */}
+      {}
+      {}
+      {}
       <div className="flex flex-col-reverse sm:flex-row gap-3">
 
-        {/* Thumbnail strip */}
+        {}
         <div
           role="group"
           aria-label="Product image thumbnails"
@@ -279,7 +225,7 @@ export default function ProductGalleryDB({
           ))}
         </div>
 
-        {/* Main image */}
+        {}
         <div className="relative flex-1 aspect-square overflow-hidden rounded-sm bg-light-200 group">
           {activeImage ? (
             <Image
@@ -294,7 +240,7 @@ export default function ProductGalleryDB({
             <GalleryEmptyState />
           )}
 
-          {/* Badge */}
+          {}
           {badge && (
             <div className="absolute top-3 left-3 z-10">
               <span className="inline-flex items-center gap-1 bg-light-100/90 backdrop-blur-sm rounded-sm px-2.5 py-1 text-footnote font-medium text-dark-900 shadow-sm">
@@ -304,7 +250,7 @@ export default function ProductGalleryDB({
             </div>
           )}
 
-          {/* Prev / Next arrows */}
+          {}
           {displayImages.length > 1 && (
             <>
               <button
@@ -344,11 +290,11 @@ export default function ProductGalleryDB({
         </div>
       </div>
 
-      {/* ── Color swatches ───────────────────────────────────────────────── */}
+      {}
       {availableColors.length > 1 && (
         <div role="group" aria-label="Select colour" className="flex flex-wrap gap-2">
           {availableColors.map((color, idx) => {
-            // Use the first image associated with this color as the swatch preview
+
             const previewImg = images.find(
               (img) =>
                 img.variantId !== null &&
@@ -368,4 +314,4 @@ export default function ProductGalleryDB({
       )}
     </div>
   );
-}
+}

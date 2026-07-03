@@ -1,29 +1,3 @@
-/**
- * /api/stripe — Stripe Webhook Handler
- *
- * Security
- * ────────
- * Every incoming request is verified with the Stripe webhook signature using
- * STRIPE_WEBHOOK_SECRET. Unverified requests are rejected with HTTP 400.
- * Never trust any payload without a valid signature.
- *
- * Idempotency
- * ───────────
- * Before creating an order we check payments.transactionId for the
- * payment_intent ID. Duplicate webhook deliveries (Stripe sends at-least-once)
- * are silently acknowledged with 200 and not re-processed.
- *
- * Runtime
- * ───────
- * Must run on Node.js runtime — Edge runtime does not support Buffer which is
- * required by stripe.webhooks.constructEvent().
- *
- * Handled events
- * ──────────────
- * • checkout.session.completed   → createOrder (inserts order + payment + clears cart)
- * • payment_intent.payment_failed → logs failure, marks payment record as failed
- */
-
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
@@ -33,18 +7,15 @@ import { db } from "@/lib/db";
 import { payments } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
-// Must be Node.js runtime — Edge does not support Buffer
 export const runtime = "nodejs";
 
-// Disable Next.js body parsing so we can read the raw body for signature verification
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  // ── 1. Read raw body as Buffer ─────────────────────────────────────────────
+
   const rawBody = await req.arrayBuffer();
   const bodyBuffer = Buffer.from(rawBody);
 
-  // ── 2. Verify Stripe signature ─────────────────────────────────────────────
   const headersList = await headers();
   const signature = headersList.get("stripe-signature");
 
@@ -75,10 +46,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
-  // ── 3. Route events ────────────────────────────────────────────────────────
   try {
     switch (event.type) {
-      // ── checkout.session.completed ─────────────────────────────────────────
+
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const paymentIntentId =
@@ -86,7 +56,6 @@ export async function POST(req: Request) {
             ? session.payment_intent
             : undefined;
 
-        // Idempotency: skip if we already processed this payment_intent
         if (paymentIntentId) {
           const [existingPayment] = await db
             .select({ id: payments.id })
@@ -102,11 +71,10 @@ export async function POST(req: Request) {
           }
         }
 
-        // Create order, order items, payment record, and clear cart
         const result = await createOrder(session);
 
         if (!result.success) {
-          // Log and acknowledge — do NOT return 5xx or Stripe will retry forever
+
           console.error("[stripe/webhook] createOrder failed:", result.error);
           return NextResponse.json(
             { received: true, warning: result.error },
@@ -120,7 +88,6 @@ export async function POST(req: Request) {
         break;
       }
 
-      // ── payment_intent.payment_failed ──────────────────────────────────────
       case "payment_intent.payment_failed": {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         const failureMessage = paymentIntent.last_payment_error?.message ?? "Unknown failure";
@@ -129,7 +96,6 @@ export async function POST(req: Request) {
           `[stripe/webhook] Payment failed — payment_intent: ${paymentIntent.id} — reason: ${failureMessage}`
         );
 
-        // Update payment record if it exists
         await db
           .update(payments)
           .set({ status: "failed" })
@@ -138,13 +104,12 @@ export async function POST(req: Request) {
         break;
       }
 
-      // ── Unhandled events ───────────────────────────────────────────────────
       default:
-        // Always log unhandled events for visibility
+
         console.log(`[stripe/webhook] Unhandled event type: ${event.type}`);
     }
   } catch (err) {
-    // Catch unexpected handler errors — return 200 so Stripe doesn't retry
+
     console.error("[stripe/webhook] Unexpected handler error:", err);
     return NextResponse.json(
       { received: true, error: "Internal handler error" },
@@ -153,4 +118,4 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json({ received: true });
-}
+}

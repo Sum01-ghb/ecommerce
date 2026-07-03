@@ -1,23 +1,5 @@
 "use server";
 
-/**
- * orders.ts — Server actions for order management
- *
- * Architecture
- * ────────────
- * • createOrder: called from the Stripe webhook after `checkout.session.completed`
- * • getOrder: fetches a full order with line items + product details
- *
- * Address handling
- * ────────────────
- * Stripe Checkout collects shipping details on their hosted page. On webhook
- * completion we create placeholder address records (shipping + billing) from
- * the Stripe shipping_details, then link them to the order.
- *
- * The `orders` table has NOT NULL FK constraints on both address columns, so
- * we must create addresses before inserting the order.
- */
-
 import { db } from "@/lib/db";
 import {
   orders,
@@ -37,10 +19,6 @@ import { and, eq } from "drizzle-orm";
 import type { CartActionResult } from "./cart";
 import type Stripe from "stripe";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
-
 export interface OrderLineItem {
   id: string;
   productId: string;
@@ -49,17 +27,17 @@ export interface OrderLineItem {
   sizeName: string;
   imageUrl: string;
   quantity: number;
-  priceAtPurchase: number; // cents
+  priceAtPurchase: number; 
 }
 
 export interface OrderDetail {
   id: string;
   userId: string;
   status: string;
-  totalAmount: number; // cents
+  totalAmount: number; 
   createdAt: Date;
   items: OrderLineItem[];
-  // Optionally expose shipping address for display
+
   shippingAddress: {
     line1: string;
     line2: string | null;
@@ -70,22 +48,6 @@ export interface OrderDetail {
   };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// createOrder
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Create an order from a Stripe checkout session (called by webhook).
- *
- * Steps:
- * 1. Fetch the user's cart items (assumes cart_id is in session metadata).
- * 2. Create shipping + billing addresses from Stripe shipping_details.
- * 3. Insert order with line items.
- * 4. Create payment record.
- * 5. Clear the cart.
- *
- * Returns the created order ID or null on failure.
- */
 export async function createOrder(
   session: Stripe.Checkout.Session
 ): Promise<CartActionResult<{ orderId: string }>> {
@@ -97,7 +59,6 @@ export async function createOrder(
       return { success: false, error: "Missing userId or cartId in session metadata" };
     }
 
-    // ── 1. Fetch cart items ────────────────────────────────────────────────
     const items = await db
       .select({
         productVariantId: cartItems.productVariantId,
@@ -113,7 +74,6 @@ export async function createOrder(
       return { success: false, error: "Cart is empty" };
     }
 
-    // ── 2. Create addresses from Stripe shipping details ───────────────────
     const shipping = session.shipping_details || session.customer_details;
     if (!shipping?.address) {
       return { success: false, error: "No shipping address found in Stripe session" };
@@ -135,7 +95,6 @@ export async function createOrder(
       })
       .returning({ id: addresses.id });
 
-    // For simplicity, use same address as billing (Stripe doesn't separate by default)
     const [billingAddressRow] = await db
       .insert(addresses)
       .values({
@@ -151,7 +110,6 @@ export async function createOrder(
       })
       .returning({ id: addresses.id });
 
-    // ── 3. Insert order ────────────────────────────────────────────────────
     const totalCents = session.amount_total ?? 0;
     const totalDollars = (totalCents / 100).toFixed(2);
 
@@ -166,7 +124,6 @@ export async function createOrder(
       })
       .returning({ id: orders.id });
 
-    // ── 4. Insert order items ──────────────────────────────────────────────
     const lineItems = items.map((item) => ({
       orderId: order.id,
       productVariantId: item.productVariantId,
@@ -176,7 +133,6 @@ export async function createOrder(
 
     await db.insert(orderItems).values(lineItems);
 
-    // ── 5. Create payment record ───────────────────────────────────────────
     await db.insert(payments).values({
       orderId: order.id,
       method: "stripe",
@@ -185,7 +141,6 @@ export async function createOrder(
       transactionId: session.payment_intent as string,
     });
 
-    // ── 6. Clear cart ──────────────────────────────────────────────────────
     await db.delete(cartItems).where(eq(cartItems.cartId, cartId));
 
     return { success: true, data: { orderId: order.id } };
@@ -196,19 +151,11 @@ export async function createOrder(
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// getOrder
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Fetch a full order with line items for the success page.
- * Returns null if the order doesn't exist.
- */
 export async function getOrder(
   orderId: string
 ): Promise<CartActionResult<OrderDetail | null>> {
   try {
-    // Fetch the order row
+
     const [order] = await db
       .select({
         id: orders.id,
@@ -226,7 +173,6 @@ export async function getOrder(
       return { success: true, data: null };
     }
 
-    // Fetch shipping address
     const [shippingAddress] = await db
       .select()
       .from(addresses)
@@ -237,7 +183,6 @@ export async function getOrder(
       return { success: false, error: "Shipping address not found" };
     }
 
-    // Fetch line items with product details
     const rows = await db
       .select({
         orderItemId: orderItems.id,
@@ -270,14 +215,14 @@ export async function getOrder(
       sizeName: r.sizeName,
       imageUrl: r.imageUrl ?? "/shoes/shoe-1.jpg",
       quantity: r.quantity,
-      priceAtPurchase: Math.round(parseFloat(r.priceAtPurchase) * 100), // cents
+      priceAtPurchase: Math.round(parseFloat(r.priceAtPurchase) * 100), 
     }));
 
     const orderDetail: OrderDetail = {
       id: order.id,
       userId: order.userId,
       status: order.status,
-      totalAmount: Math.round(parseFloat(order.totalAmount) * 100), // cents
+      totalAmount: Math.round(parseFloat(order.totalAmount) * 100), 
       createdAt: order.createdAt,
       items,
       shippingAddress: {
@@ -296,4 +241,4 @@ export async function getOrder(
     console.error("[getOrder] error:", err);
     return { success: false, error: message };
   }
-}
+}

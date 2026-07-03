@@ -1,14 +1,5 @@
-/**
- * /cart — Cart Page
- *
- * The cart is accessible to all users (guests and authenticated).
- * Auth state is resolved server-side and passed down so CartSummary
- * can redirect guests to sign-in immediately — without hitting the
- * Stripe server action first.
- */
-
 import { Suspense } from "react";
-import { getCart }  from "@/lib/actions/cart";
+import { getCart } from "@/lib/actions/cart";
 import { getCurrentUser } from "@/lib/auth/actions";
 import CartPageClient from "@/components/CartPageClient";
 import CartPageSkeleton from "@/components/CartPageSkeleton";
@@ -16,11 +7,7 @@ import CartPageSkeleton from "@/components/CartPageSkeleton";
 export const dynamic = "force-dynamic";
 
 async function CartPageData() {
-  // Run both fetches in parallel — they are independent
-  const [cartResult, user] = await Promise.all([
-    getCart(),
-    getCurrentUser(),
-  ]);
+  const [cartResult, user] = await Promise.all([getCart(), getCurrentUser()]);
 
   const initialItems = cartResult.success ? cartResult.data : [];
   const isAuthenticated = !!user;

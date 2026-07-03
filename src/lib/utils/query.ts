@@ -1,24 +1,4 @@
-/**
- * query.ts — URL query parameter helpers for the products filter/sort UI
- * and Drizzle query builders.
- *
- * All functions are pure (no side effects) and use `query-string` for
- * consistent parsing and serialisation.
- *
- * Conventions
- * ───────────
- *  • Multi-value params (gender, color, size) are stored as comma-separated
- *    strings so the URL stays readable:
- *      ?gender=men,women&color=red,black&size=us-8,us-9
- *  • Single-value params (sort, page, search) are plain strings.
- *  • Page resets to 1 whenever filters or sort change.
- */
-
 import qs from "query-string";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
 
 export type SortOption =
   | "featured"
@@ -41,11 +21,6 @@ export interface ParsedQuery extends ProductFilters {
   search?: string;
 }
 
-/**
- * Structured filter object consumed by `getAllProducts`.
- * Mirrors `ParsedQuery` but uses explicit field names that map
- * directly to Drizzle query conditions.
- */
 export interface ProductQueryParams {
   genderSlugs: string[];
   colorSlugs: string[];
@@ -58,22 +33,10 @@ export interface ProductQueryParams {
   search?: string;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Defaults
-// ─────────────────────────────────────────────────────────────────────────────
-
 export const DEFAULT_SORT: SortOption = "featured";
 export const DEFAULT_PAGE = 1;
 export const DEFAULT_LIMIT = 24;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Parsing helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Safely splits a comma-separated string into a trimmed string array.
- * Returns an empty array for falsy input.
- */
 function splitParam(value: string | null | undefined): string[] {
   if (!value) return [];
   return value
@@ -82,15 +45,6 @@ function splitParam(value: string | null | undefined): string[] {
     .filter(Boolean);
 }
 
-/**
- * Parses a raw search-params object (from Next.js `searchParams`) into a
- * fully-typed `ParsedQuery`. Missing/invalid values fall back to defaults.
- *
- * @example
- * // URL: /products?gender=men&sort=price_asc&page=2
- * parseSearchParams({ gender: "men", sort: "price_asc", page: "2" })
- * // → { gender: ["men"], color: [], size: [], sort: "price_asc", page: 2, ... }
- */
 export function parseSearchParams(
   params: Record<string, string | string[] | undefined>
 ): ParsedQuery {
@@ -126,13 +80,6 @@ export function parseSearchParams(
   };
 }
 
-/**
- * Parses URL search params and returns a `ProductQueryParams` object
- * suitable for direct consumption by `getAllProducts`.
- *
- * This is the canonical entry-point for server components — it maps URL
- * slugs to the exact shape the DB action expects.
- */
 export function parseFilterParams(
   searchParams: Record<string, string | string[] | undefined>
 ): ProductQueryParams {
@@ -140,10 +87,6 @@ export function parseFilterParams(
   return buildProductQueryObject(parsed);
 }
 
-/**
- * Converts a `ParsedQuery` (URL state) into a `ProductQueryParams`
- * (DB query input). Pure function, no side effects.
- */
 export function buildProductQueryObject(
   parsed: ParsedQuery
 ): ProductQueryParams {
@@ -160,17 +103,6 @@ export function buildProductQueryObject(
   };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Building / updating query strings
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Serialises a `ParsedQuery` back into a URL query string.
- *
- * @example
- * buildQueryString({ gender: ["men"], sort: "newest", page: 1, ... })
- * // → "gender=men&sort=newest"   (page 1 & empty arrays are omitted)
- */
 export function buildQueryString(query: Partial<ParsedQuery>): string {
   const params: Record<string, string | undefined> = {};
 
@@ -191,15 +123,6 @@ export function buildQueryString(query: Partial<ParsedQuery>): string {
   });
 }
 
-/**
- * Toggles a single value within a multi-select filter array.
- * If the value exists it is removed; otherwise it is appended.
- * Always resets page to 1.
- *
- * @example
- * toggleFilterValue({ gender: ["men"], sort: "featured", page: 2, ... }, "gender", "women")
- * // → { gender: ["men", "women"], sort: "featured", page: 1, ... }
- */
 export function toggleFilterValue(
   current: ParsedQuery,
   key: keyof ProductFilters,
@@ -213,9 +136,6 @@ export function toggleFilterValue(
   return { ...current, [key]: next, page: DEFAULT_PAGE };
 }
 
-/**
- * Updates the sort param and resets page to 1.
- */
 export function setSort(
   current: ParsedQuery,
   sort: SortOption
@@ -223,10 +143,6 @@ export function setSort(
   return { ...current, sort, page: DEFAULT_PAGE };
 }
 
-/**
- * Sets a price range filter and resets page to 1.
- * Prices are in cents to match the Card component convention.
- */
 export function setPriceRange(
   current: ParsedQuery,
   min: number | undefined,
@@ -235,9 +151,6 @@ export function setPriceRange(
   return { ...current, priceMin: min, priceMax: max, page: DEFAULT_PAGE };
 }
 
-/**
- * Removes all active filters; preserves the current sort selection.
- */
 export function clearAllFilters(current: ParsedQuery): ParsedQuery {
   return {
     gender:   [],
@@ -252,9 +165,6 @@ export function clearAllFilters(current: ParsedQuery): ParsedQuery {
   };
 }
 
-/**
- * Returns true when at least one filter is active.
- */
 export function hasActiveFilters(filters: ProductFilters): boolean {
   return (
     filters.gender.length > 0 ||
@@ -264,10 +174,6 @@ export function hasActiveFilters(filters: ProductFilters): boolean {
     filters.priceMax !== undefined
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
 
 const VALID_SORTS: SortOption[] = [
   "featured",
@@ -280,10 +186,9 @@ export function isValidSort(value: string): value is SortOption {
   return VALID_SORTS.includes(value as SortOption);
 }
 
-/** Human-readable labels for sort options. */
 export const SORT_LABELS: Record<SortOption, string> = {
   featured:   "Featured",
   newest:     "Newest",
   price_desc: "Price: High → Low",
   price_asc:  "Price: Low → High",
-};
+};

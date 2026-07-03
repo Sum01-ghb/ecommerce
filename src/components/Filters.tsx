@@ -1,15 +1,5 @@
 "use client";
 
-/**
- * Filters.tsx — Client-only sidebar / drawer filter component.
- *
- * • Desktop: sticky left sidebar.
- * • Mobile: slide-in drawer from the left with a semi-transparent overlay.
- * • Each filter group is independently collapsible.
- * • Filters update immediately on change (no Apply button).
- * • All URL interactions use `query-string` via helpers in `/lib/utils/query`.
- */
-
 import { useCallback, useState } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { ChevronDown, ChevronUp, X, SlidersHorizontal } from "lucide-react";
@@ -29,10 +19,6 @@ import {
   SIZE_OPTIONS,
   PRICE_RANGES,
 } from "@/lib/data/products";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Sub-components
-// ─────────────────────────────────────────────────────────────────────────────
 
 interface FilterGroupProps {
   title: string;
@@ -68,10 +54,6 @@ function FilterGroup({ title, children, defaultOpen = true }: FilterGroupProps) 
     </div>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Checkbox item
-// ─────────────────────────────────────────────────────────────────────────────
 
 interface CheckboxItemProps {
   id: string;
@@ -109,12 +91,8 @@ function CheckboxItem({ id, label, checked, onChange }: CheckboxItemProps) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Main component
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface FiltersProps {
-  /** Total matching product count, shown in the mobile trigger */
+
   totalCount?: number;
 }
 
@@ -124,11 +102,9 @@ export default function Filters({ totalCount }: FiltersProps) {
   const searchParams = useSearchParams();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Parse current URL state
   const rawParams = Object.fromEntries(searchParams.entries());
   const parsed    = parseSearchParams(rawParams);
 
-  // ── URL update helper ────────────────────────────────────────────────────
   const pushQuery = useCallback(
     (next: ParsedQuery) => {
       const qs = buildQueryString(next);
@@ -137,7 +113,6 @@ export default function Filters({ totalCount }: FiltersProps) {
     [router, pathname]
   );
 
-  // ── Toggle a multi-select filter ─────────────────────────────────────────
   const toggle = useCallback(
     (key: keyof ProductFilters, value: string) => {
       pushQuery(toggleFilterValue(parsed, key, value));
@@ -145,10 +120,9 @@ export default function Filters({ totalCount }: FiltersProps) {
     [parsed, pushQuery]
   );
 
-  // ── Price range selection ────────────────────────────────────────────────
   const handlePriceRange = useCallback(
     (min: number, max: number) => {
-      // Toggle: clicking active range removes it
+
       const isActive =
         parsed.priceMin === min &&
         (max === Infinity ? parsed.priceMax === undefined : parsed.priceMax === max);
@@ -162,20 +136,15 @@ export default function Filters({ totalCount }: FiltersProps) {
     [parsed, pushQuery]
   );
 
-  // ── Clear all filters ────────────────────────────────────────────────────
   const handleClearAll = useCallback(() => {
     pushQuery(clearAllFilters(parsed));
   }, [parsed, pushQuery]);
 
   const activeFilters = hasActiveFilters(parsed);
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Filter panel inner content (reused between sidebar & drawer)
-  // ─────────────────────────────────────────────────────────────────────────
-
   const filterContent = (
     <div>
-      {/* Header row */}
+      {}
       <div className="flex items-center justify-between pb-4 border-b border-light-300">
         <h2 className="text-body-medium font-medium text-dark-900">Filters</h2>
         {activeFilters && (
@@ -193,7 +162,7 @@ export default function Filters({ totalCount }: FiltersProps) {
         )}
       </div>
 
-      {/* ── Gender ──────────────────────────────────────────────────────── */}
+      {}
       <FilterGroup title="Gender">
         {GENDER_OPTIONS.map((opt) => (
           <CheckboxItem
@@ -206,7 +175,7 @@ export default function Filters({ totalCount }: FiltersProps) {
         ))}
       </FilterGroup>
 
-      {/* ── Size ────────────────────────────────────────────────────────── */}
+      {}
       <FilterGroup title="Size">
         <div className="grid grid-cols-2 gap-2">
           {SIZE_OPTIONS.map((opt) => {
@@ -233,7 +202,7 @@ export default function Filters({ totalCount }: FiltersProps) {
         </div>
       </FilterGroup>
 
-      {/* ── Color ───────────────────────────────────────────────────────── */}
+      {}
       <FilterGroup title="Color">
         <div className="flex flex-wrap gap-2">
           {COLOR_OPTIONS.map((c) => {
@@ -259,7 +228,7 @@ export default function Filters({ totalCount }: FiltersProps) {
             );
           })}
         </div>
-        {/* Color name labels for active selections */}
+        {}
         {parsed.color.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
             {parsed.color.map((slug) => {
@@ -277,7 +246,7 @@ export default function Filters({ totalCount }: FiltersProps) {
         )}
       </FilterGroup>
 
-      {/* ── Price Range ─────────────────────────────────────────────────── */}
+      {}
       <FilterGroup title="Shop By Price">
         {PRICE_RANGES.map((range) => {
           const isActive =
@@ -300,13 +269,9 @@ export default function Filters({ totalCount }: FiltersProps) {
     </div>
   );
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Render
-  // ─────────────────────────────────────────────────────────────────────────
-
   return (
     <>
-      {/* ── Mobile filter trigger ───────────────────────────────────────── */}
+      {}
       <button
         type="button"
         onClick={() => setDrawerOpen(true)}
@@ -337,7 +302,7 @@ export default function Filters({ totalCount }: FiltersProps) {
         )}
       </button>
 
-      {/* ── Mobile Drawer Overlay ───────────────────────────────────────── */}
+      {}
       {drawerOpen && (
         <div
           className="fixed inset-0 z-40 lg:hidden"
@@ -345,14 +310,14 @@ export default function Filters({ totalCount }: FiltersProps) {
           role="dialog"
           aria-label="Product filters"
         >
-          {/* Backdrop */}
+          {}
           <div
             className="absolute inset-0 bg-dark-900/40 backdrop-blur-sm"
             onClick={() => setDrawerOpen(false)}
             aria-hidden="true"
           />
 
-          {/* Drawer panel */}
+          {}
           <div
             className="
               absolute left-0 top-0 h-full w-80 max-w-[85vw]
@@ -361,7 +326,7 @@ export default function Filters({ totalCount }: FiltersProps) {
               animate-in slide-in-from-left duration-300
             "
           >
-            {/* Drawer header */}
+            {}
             <div className="sticky top-0 bg-light-100 flex items-center justify-between px-5 py-4 border-b border-light-300 z-10">
               <span className="text-body-medium font-medium text-dark-900">
                 Filters
@@ -385,11 +350,11 @@ export default function Filters({ totalCount }: FiltersProps) {
               </button>
             </div>
 
-            {/* Drawer content */}
+            {}
             <div className="px-5 pb-6 pt-2">
               {filterContent}
 
-              {/* Apply / close CTA */}
+              {}
               <button
                 type="button"
                 onClick={() => setDrawerOpen(false)}
@@ -408,7 +373,7 @@ export default function Filters({ totalCount }: FiltersProps) {
         </div>
       )}
 
-      {/* ── Desktop Sidebar ─────────────────────────────────────────────── */}
+      {}
       <aside
         aria-label="Product filters"
         className="
@@ -422,4 +387,4 @@ export default function Filters({ totalCount }: FiltersProps) {
       </aside>
     </>
   );
-}
+}

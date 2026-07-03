@@ -1,23 +1,11 @@
 "use client";
 
-/**
- * CartItemRow.tsx
- *
- * A single cart item row for the /cart page.
- * Matches the design: image | details + size/qty | price | delete.
- * Handles optimistic UI updates with server action confirmation.
- */
-
 import Image from "next/image";
 import Link  from "next/link";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { useTransition } from "react";
 import { useCartStore, type CartItem } from "@/store/cart.store";
 import { updateCartItem, removeCartItem } from "@/lib/actions/cart";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
 
 function formatPrice(cents: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -26,10 +14,6 @@ function formatPrice(cents: number): string {
     minimumFractionDigits: 2,
   }).format(cents / 100);
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Component
-// ─────────────────────────────────────────────────────────────────────────────
 
 interface CartItemRowProps {
   item: CartItem;
@@ -42,7 +26,6 @@ export default function CartItemRow({ item }: CartItemRowProps) {
   function handleQuantityChange(delta: number) {
     const newQty = item.quantity + delta;
 
-    // Optimistic update
     if (newQty <= 0) {
       removeItem(item.cartItemDbId);
     } else {
@@ -59,7 +42,7 @@ export default function CartItemRow({ item }: CartItemRowProps) {
   }
 
   function handleRemove() {
-    // Optimistic update
+
     removeItem(item.cartItemDbId);
 
     startTransition(async () => {
@@ -75,7 +58,7 @@ export default function CartItemRow({ item }: CartItemRowProps) {
         isPending ? "opacity-60" : "opacity-100"
       }`}
     >
-      {/* ── Thumbnail ─────────────────────────────────────────────────── */}
+      {}
       <Link
         href={`/products/${item.productId}`}
         className="flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 rounded-sm overflow-hidden bg-light-200 block cursor-pointer"
@@ -90,10 +73,10 @@ export default function CartItemRow({ item }: CartItemRowProps) {
         />
       </Link>
 
-      {/* ── Details ───────────────────────────────────────────────────── */}
+      {}
       <div className="flex flex-1 gap-2 justify-between">
         <div className="flex flex-col gap-1 min-w-0">
-          {/* Product name */}
+          {}
           <Link
             href={`/products/${item.productId}`}
             className="text-body-medium font-medium text-dark-900 hover:underline line-clamp-2 cursor-pointer"
@@ -101,18 +84,18 @@ export default function CartItemRow({ item }: CartItemRowProps) {
             {item.name}
           </Link>
 
-          {/* Category */}
+          {}
           <p className="text-caption text-dark-700">{item.category}</p>
 
-          {/* Size + quantity controls */}
+          {}
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-auto pt-2">
-            {/* Size */}
+            {}
             <p className="text-caption text-dark-900">
               <span className="text-dark-700">Size</span>{" "}
               <span className="font-medium">{item.sizeName}</span>
             </p>
 
-            {/* Qty controls */}
+            {}
             <div className="flex items-center gap-1">
               <span className="text-caption text-dark-700 mr-1">Quantity</span>
               <button
@@ -150,7 +133,7 @@ export default function CartItemRow({ item }: CartItemRowProps) {
           </div>
         </div>
 
-        {/* ── Right: price + delete ───────────────────────────────────── */}
+        {}
         <div className="flex flex-col items-end justify-between flex-shrink-0 ml-2">
           <span className="text-body-medium font-medium text-dark-900 whitespace-nowrap">
             {formatPrice(lineTotal)}
@@ -170,4 +153,4 @@ export default function CartItemRow({ item }: CartItemRowProps) {
       </div>
     </div>
   );
-}
+}

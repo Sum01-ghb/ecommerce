@@ -1,18 +1,3 @@
-/**
- * /products — Server-rendered product listing page.
- *
- * Data flow
- * ─────────
- * 1. Await Next.js 16 async `searchParams`.
- * 2. Parse them with `parseFilterParams` → `ProductQueryParams`.
- * 3. Call the `getAllProducts` server action — single DB round-trip.
- * 4. Render Card grid with active-filter badges and pagination.
- *
- * Client components (useSearchParams inside → must be in <Suspense>):
- *   • <Filters />  — sidebar / mobile drawer
- *   • <Sort />     — sort dropdown
- */
-
 import { Suspense } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
@@ -37,10 +22,6 @@ import {
   PRICE_RANGES,
 } from "@/lib/data/products";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Active-filter badge builder
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface ActiveBadge {
   label: string;
   nextQuery: ParsedQuery;
@@ -53,7 +34,7 @@ function buildActiveBadges(parsed: ParsedQuery): ActiveBadge[] {
     const opt = GENDER_OPTIONS.find((o) => o.slug === slug);
     if (opt)
       badges.push({
-        label:     opt.label,
+        label: opt.label,
         nextQuery: toggleFilterValue(parsed, "gender", slug),
       });
   }
@@ -62,7 +43,7 @@ function buildActiveBadges(parsed: ParsedQuery): ActiveBadge[] {
     const col = COLOR_OPTIONS.find((c) => c.slug === slug);
     if (col)
       badges.push({
-        label:     col.name,
+        label: col.name,
         nextQuery: toggleFilterValue(parsed, "color", slug),
       });
   }
@@ -71,7 +52,7 @@ function buildActiveBadges(parsed: ParsedQuery): ActiveBadge[] {
     const sz = SIZE_OPTIONS.find((s) => s.slug === slug);
     if (sz)
       badges.push({
-        label:     `Size: ${sz.label}`,
+        label: `Size: ${sz.label}`,
         nextQuery: toggleFilterValue(parsed, "size", slug),
       });
   }
@@ -82,20 +63,16 @@ function buildActiveBadges(parsed: ParsedQuery): ActiveBadge[] {
         r.min === parsed.priceMin &&
         (r.max === Infinity
           ? parsed.priceMax === undefined
-          : r.max === parsed.priceMax)
+          : r.max === parsed.priceMax),
     );
     badges.push({
-      label:     range?.label ?? "Price range",
+      label: range?.label ?? "Price range",
       nextQuery: setPriceRange(parsed, undefined, undefined),
     });
   }
 
   return badges;
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Skeleton helpers (Suspense fallbacks)
-// ─────────────────────────────────────────────────────────────────────────────
 
 function FilterSkeleton() {
   return (
@@ -113,10 +90,6 @@ function SortSkeleton() {
   return <div className="w-36 h-8 bg-light-300 animate-pulse rounded-sm" />;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Pagination component
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface PaginationProps {
   page: number;
   totalPages: number;
@@ -129,18 +102,19 @@ function Pagination({ page, totalPages, parsed }: PaginationProps) {
   const prevQuery = buildQueryString({ ...parsed, page: page - 1 });
   const nextQuery = buildQueryString({ ...parsed, page: page + 1 });
 
-  // Show up to 5 page buttons centred around the current page
   const delta = 2;
   const start = Math.max(1, page - delta);
-  const end   = Math.min(totalPages, page + delta);
-  const pageNumbers = Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  const end = Math.min(totalPages, page + delta);
+  const pageNumbers = Array.from(
+    { length: end - start + 1 },
+    (_, i) => start + i,
+  );
 
   return (
     <nav
       aria-label="Pagination"
       className="flex items-center justify-center gap-1 mt-12"
     >
-      {/* Previous */}
       {page > 1 ? (
         <Link
           href={`/products${prevQuery ? `?${prevQuery}` : ""}`}
@@ -160,7 +134,6 @@ function Pagination({ page, totalPages, parsed }: PaginationProps) {
         </span>
       )}
 
-      {/* Page numbers */}
       {start > 1 && (
         <>
           <Link
@@ -169,7 +142,9 @@ function Pagination({ page, totalPages, parsed }: PaginationProps) {
           >
             1
           </Link>
-          {start > 2 && <span className="px-1 text-dark-500 text-caption">…</span>}
+          {start > 2 && (
+            <span className="px-1 text-dark-500 text-caption">…</span>
+          )}
         </>
       )}
 
@@ -208,7 +183,6 @@ function Pagination({ page, totalPages, parsed }: PaginationProps) {
         </>
       )}
 
-      {/* Next */}
       {page < totalPages ? (
         <Link
           href={`/products${nextQuery ? `?${nextQuery}` : ""}`}
@@ -231,10 +205,6 @@ function Pagination({ page, totalPages, parsed }: PaginationProps) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Product card skeleton (loading state)
-// ─────────────────────────────────────────────────────────────────────────────
-
 function CardSkeleton() {
   return (
     <div className="flex flex-col gap-2 animate-pulse">
@@ -246,32 +216,25 @@ function CardSkeleton() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Page (server component)
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface ProductsPageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default async function ProductsPage({ searchParams }: ProductsPageProps) {
-  // Next.js 16: searchParams is a Promise
+export default async function ProductsPage({
+  searchParams,
+}: ProductsPageProps) {
   const rawParams = await searchParams;
 
-  // Parse URL state (used for UI logic and badge rendering)
-  const parsed      = parseSearchParams(rawParams);
-  // Convert to DB query shape
+  const parsed = parseSearchParams(rawParams);
   const queryParams = parseFilterParams(rawParams);
 
-  // Fetch data — server action, single DB round-trip
   const result = await getAllProducts(queryParams);
 
   const { products: productList, totalCount, page, totalPages } = result;
 
-  const activeBadges  = buildActiveBadges(parsed);
+  const activeBadges = buildActiveBadges(parsed);
   const filtersActive = hasActiveFilters(parsed);
 
-  // Heading helper
   const genderLabel =
     parsed.gender.length === 1
       ? GENDER_OPTIONS.find((g) => g.slug === parsed.gender[0])?.label
@@ -281,10 +244,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-16 py-8">
-
-      {/* ── Page header ────────────────────────────────────────────────── */}
       <div className="mb-6">
-        {/* Breadcrumb */}
         <nav aria-label="Breadcrumb" className="mb-2">
           <ol className="flex items-center gap-1.5 text-footnote text-dark-500">
             <li>
@@ -311,14 +271,12 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             </span>
           </h1>
 
-          {/* Sort — client component */}
           <Suspense fallback={<SortSkeleton />}>
             <Sort />
           </Suspense>
         </div>
       </div>
 
-      {/* ── Active filter badges ────────────────────────────────────────── */}
       {filtersActive && activeBadges.length > 0 && (
         <div
           className="flex flex-wrap items-center gap-2 mb-5"
@@ -362,20 +320,18 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         </div>
       )}
 
-      {/* ── Layout: sidebar + grid ──────────────────────────────────────── */}
       <div className="flex gap-8 items-start">
-
-        {/* Desktop sidebar */}
         <Suspense fallback={<FilterSkeleton />}>
           <Filters totalCount={totalCount} />
         </Suspense>
 
-        {/* Main content */}
         <div className="flex-1 min-w-0">
-
-          {/* Mobile: filter trigger + sort (inline, above the grid) */}
           <div className="flex items-center justify-between lg:hidden mb-4">
-            <Suspense fallback={<div className="w-24 h-8 bg-light-300 animate-pulse rounded-sm" />}>
+            <Suspense
+              fallback={
+                <div className="w-24 h-8 bg-light-300 animate-pulse rounded-sm" />
+              }
+            >
               <Filters totalCount={totalCount} />
             </Suspense>
             <Suspense fallback={<SortSkeleton />}>
@@ -384,9 +340,10 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
           </div>
 
           {productList.length === 0 ? (
-            /* ── Empty state ──────────────────────────────────────────── */
             <div className="flex flex-col items-center justify-center py-24 text-center">
-              <div className="mb-4 text-5xl" aria-hidden="true">👟</div>
+              <div className="mb-4 text-5xl" aria-hidden="true">
+                👟
+              </div>
               <h2 className="text-heading-3 font-medium text-dark-900 mb-2">
                 No products found
               </h2>
@@ -408,7 +365,6 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             </div>
           ) : (
             <>
-              {/* ── Product grid ─────────────────────────────────────── */}
               <ul
                 role="list"
                 aria-label="Products"
@@ -437,19 +393,13 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                 ))}
               </ul>
 
-              {/* ── Pagination ───────────────────────────────────────── */}
-              <Pagination
-                page={page}
-                totalPages={totalPages}
-                parsed={parsed}
-              />
+              <Pagination page={page} totalPages={totalPages} parsed={parsed} />
 
-              {/* ── Result count footer ──────────────────────────────── */}
               {totalCount > 0 && (
                 <p className="mt-6 text-center text-footnote text-dark-500">
-                  Showing{" "}
-                  {Math.min((page - 1) * parsed.limit + 1, totalCount)}–
-                  {Math.min(page * parsed.limit, totalCount)} of {totalCount} products
+                  Showing {Math.min((page - 1) * parsed.limit + 1, totalCount)}–
+                  {Math.min(page * parsed.limit, totalCount)} of {totalCount}{" "}
+                  products
                 </p>
               )}
             </>
