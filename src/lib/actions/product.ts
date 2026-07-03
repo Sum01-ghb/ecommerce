@@ -38,6 +38,8 @@ import {
   genders,
   colors,
   sizes,
+  reviews,
+  user,
 } from "@/lib/db/schema";
 import {
   and,
@@ -403,6 +405,36 @@ export async function getAllProducts(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Review types
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface ReviewItem {
+  id: string;
+  author: string;
+  rating: number;
+  title?: string;
+  content: string;
+  createdAt: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Recommended product types
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface RecommendedProduct {
+  id: string;
+  name: string;
+  category: string;
+  genderLabel: string;
+  price: number;
+  originalPrice?: number;
+  imageSrc: string;
+  badge: BadgeVariant;
+  discountLabel?: string;
+  colourCount: number;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // getProduct
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -581,4 +613,229 @@ export async function getProduct(productId: string): Promise<ProductDetail | nul
     minPrice,
     maxPrice,
   };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// getProductReviews
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Static fallback reviews used when no DB data exists
+const FALLBACK_REVIEWS: ReviewItem[] = [
+  {
+    id: "fallback-1",
+    author: "Jordan M.",
+    rating: 5,
+    title: "Best shoe I've ever owned",
+    content:
+      "These fit perfectly out of the box. The cushioning is exceptional and they look amazing. Already ordered a second pair in a different colour.",
+    createdAt: "2025-11-14T10:22:00Z",
+  },
+  {
+    id: "fallback-2",
+    author: "Taylor R.",
+    rating: 4,
+    title: "Great everyday shoe",
+    content:
+      "Really comfortable for all-day wear. The sizing runs slightly large — I'd recommend going half a size down. Otherwise flawless.",
+    createdAt: "2025-10-28T08:15:00Z",
+  },
+  {
+    id: "fallback-3",
+    author: "Alex C.",
+    rating: 5,
+    content:
+      "Wore these on a 10-mile hike and my feet felt great the whole time. Very impressed with the build quality.",
+    createdAt: "2025-10-02T14:45:00Z",
+  },
+  {
+    id: "fallback-4",
+    author: "Sam P.",
+    rating: 3,
+    title: "Looks great, comfort is average",
+    content:
+      "The design is stunning but I expected more cushioning for the price point. Still a solid shoe overall.",
+    createdAt: "2025-09-18T09:00:00Z",
+  },
+  {
+    id: "fallback-5",
+    author: "Morgan K.",
+    rating: 5,
+    title: "Worth every penny",
+    content:
+      "I was skeptical at first but these blew me away. Super lightweight and the grip is excellent on all surfaces.",
+    createdAt: "2025-08-30T17:20:00Z",
+  },
+];
+
+/**
+ * Fetches approved reviews for a product, sorted newest-first.
+ * Falls back to static demo reviews when no DB rows exist.
+ *
+ * Note: The current `reviews` schema does not have an `is_approved` column,
+ * so all reviews are treated as approved. An `is_approved` column can be
+ * added in a future migration without changing this action's interface.
+ *
+ * Limit: 10 reviews (as per spec).
+ */
+export async function getProductReviews(productId: string): Promise<ReviewItem[]> {
+  try {
+    const rows = await db
+      .select({
+        id:        reviews.id,
+        rating:    reviews.rating,
+        comment:   reviews.comment,
+        createdAt: reviews.createdAt,
+        userName:  user.name,
+      })
+      .from(reviews)
+      .leftJoin(user, eq(reviews.userId, user.id))
+      .where(eq(reviews.productId, productId))
+      .orderBy(desc(reviews.createdAt))
+      .limit(10);
+
+    if (rows.length === 0) return FALLBACK_REVIEWS;
+
+    return rows.map((r) => ({
+      id:        r.id,
+      author:    r.userName ?? "Anonymous",
+      rating:    r.rating,
+      content:   r.comment ?? "",
+      createdAt: r.createdAt.toISOString(),
+    }));
+  } catch {
+    // DB unavailable — return fallback data so the UI still renders
+    return FALLBACK_REVIEWS;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// getRecommendedProducts
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Returns 4–6 products in the same category, brand, or gender as the given
+ * product, excluding the product itself.
+ *
+ * Matching priority:
+ *   1. Same category AND gender
+ *   2. Same category
+ *   3. Same brand
+ *   4. Same gender
+ *
+ * Products with no valid primary image are silently skipped.
+ * Falls back gracefully when the DB is unavailable.
+ */
+export async function getRecommendedProducts(
+  productId: string
+): Promise<RecommendedProduct[]> {
+  // ── 1. Fetch the source product's metadata ─────────────────────────────
+  let source: { categoryId: string; brandId: string; genderId: string } | null = null;
+  try {
+    const sourceRow = await db
+      .select({
+        categoryId: products.categoryId,
+        brandId:    products.brandId,
+        genderId:   products.genderId,
+      })
+      .from(products)
+      .where(and(eq(products.id, productId), eq(products.isPublished, true)))
+      .limit(1);
+
+    if (sourceRow.length === 0) return [];
+    source = sourceRow[0];
+  } catch {
+    return [];
+  }
+
+  const { categoryId, brandId, genderId } = source;
+
+  // ── 2. Fetch candidate products via relational query ────────────────────
+  // We use db.query (relational API) so we get nested variants + images in
+  // one round-trip. The type assertion is needed because TypeScript cannot
+  // infer the `with` shape from the dynamic `where` clause.
+  interface CandidateRow {
+    id: string;
+    name: string;
+    createdAt: Date;
+    category: { name: string };
+    gender:   { label: string };
+    variants: Array<{ id: string; price: string; salePrice: string | null; colorId: string }>;
+    images:   Array<{ url: string; variantId: string | null; isPrimary: boolean; sortOrder: number }>;
+  }
+
+  let rows: CandidateRow[];
+  try {
+    const raw = await db.query.products.findMany({
+      where: and(
+        eq(products.isPublished, true),
+        sql`${products.id} != ${productId}::uuid`,
+        sql`(
+          ${products.categoryId} = ${categoryId}::uuid OR
+          ${products.brandId}    = ${brandId}::uuid    OR
+          ${products.genderId}   = ${genderId}::uuid
+        )`
+      ),
+      limit: 12,
+      with: {
+        category: { columns: { name: true } },
+        gender:   { columns: { label: true } },
+        variants: {
+          columns: { id: true, price: true, salePrice: true, colorId: true },
+        },
+        images: {
+          columns: { url: true, variantId: true, isPrimary: true, sortOrder: true },
+          orderBy: (img) => [asc(img.sortOrder)],
+        },
+      },
+    });
+    rows = raw as unknown as CandidateRow[];
+  } catch {
+    return [];
+  }
+
+  // ── 3. Map + filter ─────────────────────────────────────────────────────
+  const results: RecommendedProduct[] = [];
+
+  for (const row of rows) {
+    const imageSrc = resolveCardImage(row.images, new Set());
+    if (!imageSrc) continue;
+
+    let basePrice    = "0";
+    let salePriceRaw: string | null = null;
+    let minEffective = Infinity;
+
+    for (const v of row.variants) {
+      const effective = v.salePrice ? parseFloat(v.salePrice) : parseFloat(v.price);
+      if (effective < minEffective) {
+        minEffective = effective;
+        basePrice    = v.price;
+        salePriceRaw = v.salePrice ?? null;
+      }
+    }
+
+    const colourCount        = new Set(row.variants.map((v) => v.colorId)).size;
+    const { badge, discountLabel } = deriveBadge(basePrice, salePriceRaw, row.createdAt);
+    const priceCents         = toCents(salePriceRaw ?? basePrice);
+    const originalPriceCents =
+      salePriceRaw && parseFloat(salePriceRaw) < parseFloat(basePrice)
+        ? toCents(basePrice)
+        : undefined;
+
+    results.push({
+      id:            row.id,
+      name:          row.name,
+      category:      row.category.name,
+      genderLabel:   row.gender.label,
+      price:         priceCents,
+      originalPrice: originalPriceCents,
+      imageSrc,
+      badge,
+      discountLabel,
+      colourCount,
+    });
+
+    if (results.length >= 6) break;
+  }
+
+  return results;
 }

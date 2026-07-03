@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useCartStore } from "@/store/useCartStore";
+import { useCartStore } from "@/store/cart.store";
 
 const NAV_LINKS = [
   { label: "Men",         href: "/products?gender=men" },

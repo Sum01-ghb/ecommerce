@@ -13,12 +13,10 @@ import type { BadgeVariant } from "@/components/Card";
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type GenderSlug = "men" | "women" | "kids" | "unisex";
-export type ColorSlug  = "white" | "black" | "red" | "blue" | "grey" | "green";
-export type SizeSlug   =
-  | "us-6" | "us-7" | "us-8" | "us-9"
-  | "us-10" | "us-11" | "us-12" | "us-13";
-export type CategorySlug =
-  | "lifestyle" | "running" | "basketball" | "trail";
+export type ColorSlug = "white" | "black" | "red" | "blue" | "grey" | "green" | "brown";
+export type SizeSlug =
+  "us-6" | "us-7" | "us-8" | "us-9" | "us-10" | "us-11" | "us-12" | "us-13";
+export type CategorySlug = "lifestyle" | "running" | "basketball" | "trail";
 
 export interface MockColor {
   slug: ColorSlug;
@@ -54,19 +52,27 @@ export interface MockProduct {
 // Color definitions
 // ─────────────────────────────────────────────────────────────────────────────
 
-const WHITE:  MockColor = { slug: "white", name: "White", hexCode: "#FFFFFF" };
-const BLACK:  MockColor = { slug: "black", name: "Black", hexCode: "#000000" };
-const RED:    MockColor = { slug: "red",   name: "Red",   hexCode: "#D33918" };
-const BLUE:   MockColor = { slug: "blue",  name: "Blue",  hexCode: "#1E40AF" };
-const GREY:   MockColor = { slug: "grey",  name: "Grey",  hexCode: "#808080" };
-const GREEN:  MockColor = { slug: "green", name: "Green", hexCode: "#007D48" };
+const WHITE: MockColor = { slug: "white", name: "White", hexCode: "#FFFFFF" };
+const BLACK: MockColor = { slug: "black", name: "Black", hexCode: "#000000" };
+const RED: MockColor = { slug: "red", name: "Red", hexCode: "#D33918" };
+const BLUE: MockColor = { slug: "blue", name: "Blue", hexCode: "#1E40AF" };
+const GREY: MockColor = { slug: "grey", name: "Grey", hexCode: "#808080" };
+const GREEN: MockColor = { slug: "green", name: "Green", hexCode: "#007D48" };
+const BROWN: MockColor = { slug: "brown", name: "Brown", hexCode: "#964B00" };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // All sizes
 // ─────────────────────────────────────────────────────────────────────────────
 
 const ALL_SIZES: SizeSlug[] = [
-  "us-6", "us-7", "us-8", "us-9", "us-10", "us-11", "us-12", "us-13",
+  "us-6",
+  "us-7",
+  "us-8",
+  "us-9",
+  "us-10",
+  "us-11",
+  "us-12",
+  "us-13",
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -324,19 +330,26 @@ export const MOCK_PRODUCTS: MockProduct[] = [
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const GENDER_OPTIONS = [
-  { slug: "men",    label: "Men" },
-  { slug: "women",  label: "Women" },
-  { slug: "kids",   label: "Kids" },
+  { slug: "men", label: "Men" },
+  { slug: "women", label: "Women" },
+  { slug: "kids", label: "Kids" },
   { slug: "unisex", label: "Unisex" },
 ] as const;
 
-export const COLOR_OPTIONS: MockColor[] = [WHITE, BLACK, RED, BLUE, GREY, GREEN];
+export const COLOR_OPTIONS: MockColor[] = [
+  WHITE,
+  BLACK,
+  RED,
+  BLUE,
+  GREY,
+  GREEN,
+];
 
 export const SIZE_OPTIONS = [
-  { slug: "us-6",  label: "US 6" },
-  { slug: "us-7",  label: "US 7" },
-  { slug: "us-8",  label: "US 8" },
-  { slug: "us-9",  label: "US 9" },
+  { slug: "us-6", label: "US 6" },
+  { slug: "us-7", label: "US 7" },
+  { slug: "us-8", label: "US 8" },
+  { slug: "us-9", label: "US 9" },
   { slug: "us-10", label: "US 10" },
   { slug: "us-11", label: "US 11" },
   { slug: "us-12", label: "US 12" },
@@ -344,8 +357,8 @@ export const SIZE_OPTIONS = [
 ] as const;
 
 export const PRICE_RANGES = [
-  { label: "Under $50",     min: 0,   max: 5000 },
-  { label: "$50 – $100",    min: 5000, max: 10000 },
-  { label: "$100 – $150",   min: 10000, max: 15000 },
-  { label: "Over $150",     min: 15000, max: Infinity },
+  { label: "Under $50", min: 0, max: 5000 },
+  { label: "$50 – $100", min: 5000, max: 10000 },
+  { label: "$100 – $150", min: 10000, max: 15000 },
+  { label: "Over $150", min: 15000, max: Infinity },
 ] as const;

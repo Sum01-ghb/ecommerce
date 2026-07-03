@@ -178,11 +178,14 @@ export async function signUp(
     }
 
     // 3. Merge cart, then clear guest session
-    if (guestCartJson) {
+    const guestToken = await guestSession();
+    if (guestToken) {
+      const { mergeGuestCartIntoUserCart } = await import("@/lib/actions/cart");
+      await mergeGuestCartIntoUserCart(guestToken);
+      await clearGuestSession(guestToken);
+    } else if (guestCartJson) {
       await mergeGuestCartWithUserCart(guestCartJson);
     }
-    const guestToken = await guestSession();
-    if (guestToken) await clearGuestSession(guestToken);
   } catch (err: unknown) {
     const message =
       err instanceof Error ? err.message : "An unexpected error occurred.";
@@ -254,11 +257,14 @@ export async function signIn(
     }
 
     // 3. Merge cart, then clear guest session
-    if (guestCartJson) {
+    const guestToken2 = await guestSession();
+    if (guestToken2) {
+      const { mergeGuestCartIntoUserCart } = await import("@/lib/actions/cart");
+      await mergeGuestCartIntoUserCart(guestToken2);
+      await clearGuestSession(guestToken2);
+    } else if (guestCartJson) {
       await mergeGuestCartWithUserCart(guestCartJson);
     }
-    const guestToken = await guestSession();
-    if (guestToken) await clearGuestSession(guestToken);
   } catch (err: unknown) {
     const message =
       err instanceof Error ? err.message : "An unexpected error occurred.";

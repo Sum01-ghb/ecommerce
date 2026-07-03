@@ -97,7 +97,7 @@ async function getProducts() {
       id: p.id,
       name: p.name,
       category: p.categoryName || "Uncategorized",
-      price: p.price ? Number(p.price) : 0,
+      price: p.price ? Math.round(parseFloat(p.price) * 100) : 0,
       imageSrc: p.imageUrl || "/shoes/shoe-1.jpg",
       badge: i === 0 ? "best-seller" : i < 3 ? "sale" : "none",
       discountLabel: i < 3 && i !== 0 ? "20% off" : undefined,

@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { useCartStore } from "@/store/useCartStore";
+import { useRouter } from "next/navigation";
 
 export type BadgeVariant = "best-seller" | "sale" | "new" | "none";
 
@@ -63,11 +63,11 @@ export default function Card({
   discountLabel,
   onClick,
 }: CardProps) {
-  const addToCart = useCartStore((s) => s.addToCart);
+  const router = useRouter();
 
-  const handleAddToCart = onClick
-    ? onClick
-    : () => addToCart({ id: Number(id), name, price, imageUrl: imageSrc });
+  // "Add to Cart" on the listing card navigates to the PDP where the user
+  // picks a size before adding. Shoe variants require size selection.
+  const handleAddToCart = onClick ?? (() => router.push(`/products/${id}`));
 
   const hasDiscount = originalPrice !== undefined && originalPrice > price;
 
