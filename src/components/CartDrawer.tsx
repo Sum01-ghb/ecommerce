@@ -222,9 +222,9 @@ export default function CartDrawer() {
                 View Cart
               </Link>
 
-              {/* Checkout */}
+              {/* Checkout — goes to /cart where the Stripe checkout button lives */}
               <Link
-                href="/checkout"
+                href="/cart"
                 onClick={() => setIsOpen(false)}
                 className="
                   w-full block text-center rounded-sm bg-dark-900

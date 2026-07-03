@@ -8,12 +8,14 @@ import { nextCookies } from "better-auth/next-js";
 /**
  * Better Auth instance.
  *
- * - Email/password login is enabled (no verification in MVP).
- * - The Drizzle adapter is pointed at the modular auth schema in `src/lib/db/schema/`.
- * - Session cookie is named `auth_session`, HttpOnly, Secure, SameSite=lax.
+ * Providers
+ * ─────────
+ * • Email/password  — always enabled, no verification in MVP
+ * • Google OAuth    — enabled when GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET are set
+ * • Apple OAuth     — enabled when APPLE_CLIENT_ID + APPLE_CLIENT_SECRET are set
  *
- * OAuth providers (Google, Apple) are stubbed — add `socialProviders` config
- * when ready. The `account` / `verification` tables are already in the schema.
+ * To activate a provider set the corresponding env vars and restart the server.
+ * The account / verification tables are already in the schema.
  */
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -26,12 +28,33 @@ export const auth = betterAuth({
     },
   }),
 
+  // ── Email & password ───────────────────────────────────────────────────────
   emailAndPassword: {
     enabled: true,
-    // No email verification in MVP — flip to true post-MVP
     requireEmailVerification: false,
   },
 
+  // ── Social OAuth providers ─────────────────────────────────────────────────
+  socialProviders: {
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? {
+          google: {
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          },
+        }
+      : {}),
+    ...(process.env.APPLE_CLIENT_ID && process.env.APPLE_CLIENT_SECRET
+      ? {
+          apple: {
+            clientId: process.env.APPLE_CLIENT_ID,
+            clientSecret: process.env.APPLE_CLIENT_SECRET,
+          },
+        }
+      : {}),
+  },
+
+  // ── Session ────────────────────────────────────────────────────────────────
   session: {
     cookieCache: {
       enabled: true,
@@ -39,19 +62,21 @@ export const auth = betterAuth({
     },
   },
 
+  // ── Cookie config ──────────────────────────────────────────────────────────
   cookies: {
     sessionToken: {
       name: "auth_session",
       options: {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        sameSite: "lax" as const, // "lax" required for OAuth redirects
         path: "/",
         maxAge: 60 * 60 * 24 * 7,
       },
     },
   },
 
+  // ── Advanced ───────────────────────────────────────────────────────────────
   advanced: {
     cookiePrefix: "nike",
     useSecureCookies: process.env.NODE_ENV === "production",
@@ -65,4 +90,4 @@ export const auth = betterAuth({
 
 /** Inferred type helpers for use throughout the app */
 export type AuthSession = typeof auth.$Infer.Session;
-export type AuthUser = typeof auth.$Infer.Session.user;
+export type AuthUser    = typeof auth.$Infer.Session.user;

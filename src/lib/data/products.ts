@@ -343,6 +343,7 @@ export const COLOR_OPTIONS: MockColor[] = [
   BLUE,
   GREY,
   GREEN,
+  BROWN,
 ];
 
 export const SIZE_OPTIONS = [

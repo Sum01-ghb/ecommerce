@@ -1,11 +1,9 @@
 "use client";
 import React, { useState, useId, useTransition } from "react";
 import Link from "next/link";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
-import SocialProviders from "@/components/SocialProviders";
+import { Eye, EyeOff, Loader2 } from "lucide-react";import SocialProviders from "@/components/SocialProviders";
 import { signIn, signUp } from "@/lib/auth/actions";
-import { useCartStore } from "@/store/useCartStore";
-import { useRouter } from "next/navigation";
+import { useCartStore } from "@/store/cart.store";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -126,12 +124,9 @@ export default function AuthForm({
   const isSignUp = mode === "sign-up";
   const [isPending, startTransition] = useTransition();
 
-  const router = useRouter();
-
   // Cart items are serialised and sent to the server action for merging
   const cartItems = useCartStore((s) => s.items);
-  const setCartItems = useCartStore((s) => s.addToCart);
-  const clearCart = useCartStore((s) => s.clearCart);
+  const clearCart = useCartStore((s) => s.clearItems);
 
   // ── Field state ──────────────────────────────────────────────────────────
   const [name, setName] = useState("");
@@ -161,7 +156,7 @@ export default function AuthForm({
   }
 
   // ── Submit handler ───────────────────────────────────────────────────────
-  async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setFormError(null);
 
@@ -240,7 +235,7 @@ export default function AuthForm({
       </div>
 
       {/* Social providers */}
-      <SocialProviders action={isSignUp ? "Sign up" : "Sign in"} />
+      <SocialProviders action={isSignUp ? "Sign up" : "Sign in"} callbackUrl={callbackUrl} />
 
       {/* Divider */}
       <Divider />

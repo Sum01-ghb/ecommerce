@@ -1,8 +1,36 @@
 "use client";
 
-import React from "react";
+/**
+ * SocialProviders.tsx — Google & Apple OAuth buttons
+ *
+ * Uses Better Auth's browser client (`authClient.signIn.social`) to kick
+ * off the OAuth redirect flow.  The provider buttons are only rendered when
+ * the corresponding env vars are configured — if neither is set the component
+ * renders nothing so the sign-in page degrades gracefully to email-only.
+ *
+ * Environment variables that activate each button:
+ *   Google → NEXT_PUBLIC_GOOGLE_ENABLED=true
+ *   Apple  → NEXT_PUBLIC_APPLE_ENABLED=true
+ *
+ * Those flags are set to true on the server side only when the matching
+ * secret env vars (GOOGLE_CLIENT_ID etc.) are present, keeping secrets
+ * out of client bundles.
+ */
 
-/* ── Inline SVG brand icons ──────────────────────────────────────────────── */
+import React, { useState } from "react";
+import { Loader2 } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Feature flags — driven by public env vars so the bundle stays secret-free
+// ─────────────────────────────────────────────────────────────────────────────
+
+const GOOGLE_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_ENABLED === "true";
+const APPLE_ENABLED  = process.env.NEXT_PUBLIC_APPLE_ENABLED  === "true";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SVG brand icons
+// ─────────────────────────────────────────────────────────────────────────────
 
 function GoogleIcon() {
   return (
@@ -50,55 +78,116 @@ function AppleIcon() {
   );
 }
 
-/* ── Component ───────────────────────────────────────────────────────────── */
+// ─────────────────────────────────────────────────────────────────────────────
+// Component
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface SocialProvidersProps {
-  /** Label context: "sign in" | "sign up" */
+  /** Verb shown on button: "Sign in" | "Sign up" | "Continue" */
   action?: string;
+  /** Where to send the user after a successful OAuth login */
+  callbackUrl?: string;
 }
 
-export default function SocialProviders({ action = "continue" }: SocialProvidersProps) {
+export default function SocialProviders({
+  action = "Continue",
+  callbackUrl = "/",
+}: SocialProvidersProps) {
+  const [loadingProvider, setLoadingProvider] = useState<
+    "google" | "apple" | null
+  >(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Nothing to render if neither provider is configured
+  if (!GOOGLE_ENABLED && !APPLE_ENABLED) return null;
+
+  async function handleSocialSignIn(provider: "google" | "apple") {
+    if (loadingProvider) return;
+    setError(null);
+    setLoadingProvider(provider);
+
+    try {
+      await authClient.signIn.social({
+        provider,
+        callbackURL: callbackUrl,
+        // errorCallbackURL shown when the provider returns an error
+        errorCallbackURL: "/sign-in?error=oauth",
+      });
+      // Better Auth handles the redirect — execution stops here
+    } catch (err) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : `Failed to sign in with ${provider}`;
+      setError(msg);
+      setLoadingProvider(null);
+    }
+  }
+
   return (
     <div className="space-y-3">
+      {/* Error */}
+      {error && (
+        <p role="alert" className="text-footnote text-red text-center">
+          {error}
+        </p>
+      )}
+
       {/* Google */}
-      <button
-        type="button"
-        aria-label="Continue with Google"
-        onClick={() => {
-          /* TODO: wire Google OAuth via better-auth */
-        }}
-        className="
-          w-full flex items-center justify-center gap-3
-          rounded-sm border border-light-400 bg-light-100
-          px-4 py-3 text-caption font-medium text-dark-900
-          hover:bg-light-200 hover:border-dark-500
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900 focus-visible:ring-offset-2
-          transition-colors duration-150
-        "
-      >
-        <GoogleIcon />
-        <span>{action} with Google</span>
-      </button>
+      {GOOGLE_ENABLED && (
+        <button
+          type="button"
+          aria-label="Continue with Google"
+          disabled={loadingProvider !== null}
+          onClick={() => handleSocialSignIn("google")}
+          className="
+            w-full flex items-center justify-center gap-3
+            rounded-sm border border-light-400 bg-light-100
+            px-4 py-3 text-caption font-medium text-dark-900
+            hover:bg-light-200 hover:border-dark-500
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900 focus-visible:ring-offset-2
+            disabled:opacity-60 disabled:cursor-not-allowed
+            transition-colors duration-150
+          "
+        >
+          {loadingProvider === "google" ? (
+            <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+          ) : (
+            <GoogleIcon />
+          )}
+          <span>
+            {loadingProvider === "google" ? "Redirecting…" : `${action} with Google`}
+          </span>
+        </button>
+      )}
 
       {/* Apple */}
-      <button
-        type="button"
-        aria-label="Continue with Apple"
-        onClick={() => {
-          /* TODO: wire Apple OAuth via better-auth */
-        }}
-        className="
-          w-full flex items-center justify-center gap-3
-          rounded-sm border border-dark-900 bg-dark-900
-          px-4 py-3 text-caption font-medium text-light-100
-          hover:bg-black hover:border-black
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900 focus-visible:ring-offset-2
-          transition-colors duration-150
-        "
-      >
-        <AppleIcon />
-        <span>{action} with Apple</span>
-      </button>
+      {APPLE_ENABLED && (
+        <button
+          type="button"
+          aria-label="Continue with Apple"
+          disabled={loadingProvider !== null}
+          onClick={() => handleSocialSignIn("apple")}
+          className="
+            w-full flex items-center justify-center gap-3
+            rounded-sm border border-dark-900 bg-dark-900
+            px-4 py-3 text-caption font-medium text-light-100
+            hover:bg-black hover:border-black
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900 focus-visible:ring-offset-2
+            disabled:opacity-60 disabled:cursor-not-allowed
+            transition-colors duration-150
+          "
+        >
+          {loadingProvider === "apple" ? (
+            <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+          ) : (
+            <AppleIcon />
+          )}
+          <span>
+            {loadingProvider === "apple" ? "Redirecting…" : `${action} with Apple`}
+          </span>
+        </button>
+      )}
     </div>
   );
 }

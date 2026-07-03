@@ -5,130 +5,16 @@
  *
  * Interactive cart page content.
  * - Initializes the Zustand store from SSR-fetched items.
- * - Renders the item list and order summary.
- * - Handles checkout redirect: guests → /sign-in, users → /checkout.
+ * - Renders the item list and CartSummary sidebar (with Stripe integration).
  */
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
-import { ShoppingBag, ArrowRight } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { ShoppingBag } from "lucide-react";
 import { useCartStore, type CartItem } from "@/store/cart.store";
 import CartItemRow from "@/components/CartItemRow";
+import CartSummary from "@/components/CartSummary";
 import { clearCart } from "@/lib/actions/cart";
-import { getCurrentUser } from "@/lib/auth/actions";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
-const DELIVERY_FEE_CENTS = 200; // $2.00 flat rate (waived when subtotal > $5000 / $50)
-const FREE_DELIVERY_THRESHOLD = 5000; // cents
-
-function formatPrice(cents: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-  }).format(cents / 100);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Order Summary sidebar
-// ─────────────────────────────────────────────────────────────────────────────
-
-interface OrderSummaryProps {
-  subtotalCents: number;
-  onCheckout: () => void;
-  isCheckingOut: boolean;
-}
-
-function OrderSummary({ subtotalCents, onCheckout, isCheckingOut }: OrderSummaryProps) {
-  const deliveryFee =
-    subtotalCents >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_FEE_CENTS;
-  const total = subtotalCents + deliveryFee;
-
-  return (
-    <aside
-      aria-label="Order summary"
-      className="
-        w-full lg:w-80 xl:w-96 flex-shrink-0
-        bg-light-100 border border-light-300 rounded-sm p-6
-        h-fit sticky top-24
-      "
-    >
-      <h2 className="text-body-medium font-medium text-dark-900 mb-5">
-        Summary
-      </h2>
-
-      <div className="space-y-3 mb-5">
-        {/* Subtotal */}
-        <div className="flex justify-between items-center">
-          <span className="text-body text-dark-900">Subtotal</span>
-          <span className="text-caption font-medium text-dark-900">
-            {formatPrice(subtotalCents)}
-          </span>
-        </div>
-
-        {/* Delivery */}
-        <div className="flex justify-between items-center">
-          <span className="text-body text-dark-900">
-            Estimated Delivery &amp; Handling
-          </span>
-          <span className="text-caption font-medium text-dark-900">
-            {deliveryFee === 0 ? (
-              <span className="text-green">Free</span>
-            ) : (
-              formatPrice(deliveryFee)
-            )}
-          </span>
-        </div>
-
-        {/* Divider */}
-        <div className="border-t border-light-300 pt-3">
-          <div className="flex justify-between items-center">
-            <span className="text-body-medium font-medium text-dark-900">Total</span>
-            <span className="text-body-medium font-medium text-dark-900">
-              {formatPrice(total)}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Free delivery notice */}
-      {subtotalCents < FREE_DELIVERY_THRESHOLD && (
-        <p className="text-footnote text-dark-700 mb-4">
-          Add{" "}
-          <span className="font-medium">
-            {formatPrice(FREE_DELIVERY_THRESHOLD - subtotalCents)}
-          </span>{" "}
-          more for free delivery.
-        </p>
-      )}
-
-      {/* Checkout CTA */}
-      <button
-        onClick={onCheckout}
-        disabled={isCheckingOut || subtotalCents === 0}
-        className="
-          w-full flex items-center justify-center gap-2
-          rounded-full bg-dark-900 text-light-100
-          py-4 text-caption font-medium
-          hover:bg-black transition-colors duration-150
-          focus:outline-none focus-visible:ring-2 focus-visible:ring-dark-900 focus-visible:ring-offset-2
-          disabled:opacity-50 disabled:cursor-not-allowed
-        "
-      >
-        {isCheckingOut ? "Redirecting…" : "Proceed to Checkout"}
-        {!isCheckingOut && <ArrowRight size={14} aria-hidden="true" />}
-      </button>
-
-      <p className="text-footnote text-center text-dark-500 mt-3">
-        Taxes calculated at checkout
-      </p>
-    </aside>
-  );
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Empty state
@@ -169,12 +55,11 @@ function EmptyCart() {
 
 interface CartPageClientProps {
   initialItems: CartItem[];
+  isAuthenticated: boolean;
 }
 
-export default function CartPageClient({ initialItems }: CartPageClientProps) {
+export default function CartPageClient({ initialItems, isAuthenticated }: CartPageClientProps) {
   const { items, setItems } = useCartStore();
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const router = useRouter();
 
   // Hydrate store with SSR data on first render
   useEffect(() => {
@@ -189,22 +74,6 @@ export default function CartPageClient({ initialItems }: CartPageClientProps) {
     (acc, item) => acc + item.price * item.quantity,
     0
   );
-
-  async function handleCheckout() {
-    setIsCheckingOut(true);
-    try {
-      const user = await getCurrentUser();
-      if (!user) {
-        // Guest → redirect to sign-in with callbackUrl
-        router.push("/sign-in?callbackUrl=/cart");
-      } else {
-        // Logged in → go to checkout (placeholder)
-        router.push("/checkout");
-      }
-    } finally {
-      setIsCheckingOut(false);
-    }
-  }
 
   async function handleClearCart() {
     setItems([]);
@@ -254,11 +123,11 @@ export default function CartPageClient({ initialItems }: CartPageClientProps) {
         </div>
       </div>
 
-      {/* ── Order summary ────────────────────────────────────────────────── */}
-      <OrderSummary
+      {/* ── Order summary with Stripe Checkout ─────────────────────────── */}
+      <CartSummary
         subtotalCents={subtotalCents}
-        onCheckout={handleCheckout}
-        isCheckingOut={isCheckingOut}
+        itemCount={displayItems.length}
+        isAuthenticated={isAuthenticated}
       />
     </div>
   );

@@ -18,8 +18,6 @@
  */
 
 import "dotenv/config";
-import path from "path";
-import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
 import { eq } from "drizzle-orm";
 import { db } from "./index";
@@ -59,21 +57,18 @@ function slugify(str: string): string {
     .replace(/(^-|-$)/g, "");
 }
 
-/** Copy a file, creating destination directories as needed. */
-function copyImage(srcRelative: string, destRelative: string): string {
-  const root = path.resolve(process.cwd());
-  const src  = path.join(root, srcRelative);
-  const dest = path.join(root, destRelative);
-
-  fs.mkdirSync(path.dirname(dest), { recursive: true });
-
-  if (!fs.existsSync(src)) {
-    console.warn(`  ⚠  Source image not found: ${src} — skipping copy`);
-    return `/${destRelative}`;
-  }
-
-  fs.copyFileSync(src, dest);
-  return `/${destRelative}`;
+/**
+ * Resolve a public-folder image path to the URL that Next.js / Vercel will serve.
+ *
+ * Images live in public/shoes/ and are committed to the repo, so they are
+ * always available at /shoes/<filename> on any deployment — no file-copy needed.
+ *
+ * Example: "public/shoes/shoe-1.jpg" → "/shoes/shoe-1.jpg"
+ */
+function resolveImageUrl(srcRelative: string): string {
+  // Strip the leading "public" segment so the URL is relative to the web root
+  const withoutPublic = srcRelative.replace(/^public\//, "");
+  return `/${withoutPublic}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -434,11 +429,8 @@ async function main() {
         .where(eq(products.id, productId));
     }
 
-    // ── 5d. Images — copy from public/shoes/ → static/uploads/ ────────────
-    const destDir = `static/uploads/shoes/${slugify(seed.name)}`;
-    const ext     = path.extname(seed.image);
-    const destPath = `${destDir}/primary${ext}`;
-    const imgUrl   = copyImage(seed.image, destPath);
+    // ── 5d. Images — resolve /shoes/ paths directly from public/ ─────────
+    const imgUrl = resolveImageUrl(seed.image);
 
     // Primary image (not tied to a specific variant)
     await db.insert(productImages).values({
@@ -453,10 +445,7 @@ async function main() {
     // Extra images tied to the first variant (variant gallery)
     if (seed.extraImages) {
       for (let i = 0; i < seed.extraImages.length; i++) {
-        const extraSrc  = seed.extraImages[i];
-        const extraExt  = path.extname(extraSrc);
-        const extraDest = `${destDir}/extra-${i + 1}${extraExt}`;
-        const extraUrl  = copyImage(extraSrc, extraDest);
+        const extraUrl = resolveImageUrl(seed.extraImages[i]);
 
         await db.insert(productImages).values({
           id: uuidv4(),

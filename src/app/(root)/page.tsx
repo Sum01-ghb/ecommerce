@@ -9,6 +9,9 @@ import { AlertTriangle } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/actions";
 import { eq, and } from "drizzle-orm";
 
+// Force dynamic rendering because getCurrentUser() uses headers()
+export const dynamic = "force-dynamic";
+
 // ------------------------------------------------------------------
 // Static fallback data used when the DB is not yet connected
 // ------------------------------------------------------------------
