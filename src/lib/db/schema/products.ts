@@ -1,5 +1,6 @@
 import {
   boolean,
+  index,
   jsonb,
   numeric,
   pgTable,
@@ -56,7 +57,13 @@ export const products = pgTable("products", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}, (table) => ({
+  // Compound indexes for filtering queries
+  brandPublishedIdx: index("products_brand_published_idx").on(table.brandId, table.isPublished),
+  categoryPublishedIdx: index("products_category_published_idx").on(table.categoryId, table.isPublished),
+  genderPublishedIdx: index("products_gender_published_idx").on(table.genderId, table.isPublished),
+  createdAtIdx: index("products_created_at_idx").on(table.createdAt),
+}));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Product Variants
@@ -87,7 +94,14 @@ export const productVariants = pgTable("product_variants", {
   weight: real("weight"),                 // kg
   dimensions: jsonb("dimensions").$type<Dimensions>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => ({
+  // Index for filtering by color and product
+  colorProductIdx: index("product_variants_color_product_idx").on(table.colorId, table.productId),
+  // Index for filtering by size
+  sizeProductIdx: index("product_variants_size_product_idx").on(table.sizeId, table.productId),
+  // Index for price sorting
+  priceIdx: index("product_variants_price_idx").on(table.price),
+}));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Product Images
@@ -105,7 +119,12 @@ export const productImages = pgTable("product_images", {
   url: text("url").notNull(),
   sortOrder: integer("sort_order").notNull().default(0),
   isPrimary: boolean("is_primary").notNull().default(false),
-});
+}, (table) => ({
+  // Index for querying images by product
+  productIdIdx: index("product_images_product_id_idx").on(table.productId),
+  // Index for querying images by variant (color-specific images)
+  variantIdIdx: index("product_images_variant_id_idx").on(table.variantId),
+}));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Relations

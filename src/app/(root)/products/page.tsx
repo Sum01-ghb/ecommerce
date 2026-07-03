@@ -1,16 +1,16 @@
 /**
  * /products — Server-rendered product listing page.
  *
- * Reads filter/sort state from `searchParams` (Next.js 16 async API),
- * applies filtering + sorting to the mock catalogue entirely on the server,
- * then renders a responsive grid of Card components.
+ * Data flow
+ * ─────────
+ * 1. Await Next.js 16 async `searchParams`.
+ * 2. Parse them with `parseFilterParams` → `ProductQueryParams`.
+ * 3. Call the `getAllProducts` server action — single DB round-trip.
+ * 4. Render Card grid with active-filter badges and pagination.
  *
- * Client components:
- *   • <Filters />  — sidebar / drawer, syncs state to URL
- *   • <Sort />     — dropdown, syncs sort state to URL
- *
- * Both client components are wrapped in <Suspense> as required by Next.js
- * when they call `useSearchParams()`.
+ * Client components (useSearchParams inside → must be in <Suspense>):
+ *   • <Filters />  — sidebar / mobile drawer
+ *   • <Sort />     — sort dropdown
  */
 
 import { Suspense } from "react";
@@ -19,8 +19,10 @@ import { X } from "lucide-react";
 import Card from "@/components/Card";
 import Filters from "@/components/Filters";
 import Sort from "@/components/Sort";
+import { getAllProducts } from "@/lib/actions/product";
 import {
   parseSearchParams,
+  parseFilterParams,
   buildQueryString,
   toggleFilterValue,
   setPriceRange,
@@ -29,82 +31,18 @@ import {
   type ProductFilters,
 } from "@/lib/utils/query";
 import {
-  MOCK_PRODUCTS,
   GENDER_OPTIONS,
   COLOR_OPTIONS,
   SIZE_OPTIONS,
   PRICE_RANGES,
-  type MockProduct,
 } from "@/lib/data/products";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Filtering & sorting (pure, server-side)
-// ─────────────────────────────────────────────────────────────────────────────
-
-function applyFilters(
-  products: MockProduct[],
-  filters: ParsedQuery
-): MockProduct[] {
-  return products.filter((p) => {
-    // Gender
-    if (
-      filters.gender.length > 0 &&
-      !filters.gender.includes(p.genderSlug)
-    )
-      return false;
-
-    // Color — product must have at least one matching color variant
-    if (
-      filters.color.length > 0 &&
-      !p.colors.some((c) => filters.color.includes(c.slug))
-    )
-      return false;
-
-    // Size — product must have at least one matching size variant
-    if (
-      filters.size.length > 0 &&
-      !p.sizes.some((s) => filters.size.includes(s))
-    )
-      return false;
-
-    // Price range (price is in cents)
-    if (filters.priceMin !== undefined && p.price < filters.priceMin)
-      return false;
-    if (filters.priceMax !== undefined && p.price > filters.priceMax)
-      return false;
-
-    return true;
-  });
-}
-
-function applySort(products: MockProduct[], sort: ParsedQuery["sort"]): MockProduct[] {
-  const copy = [...products];
-  switch (sort) {
-    case "newest":
-      return copy.sort((a, b) => b.createdAt - a.createdAt);
-    case "price_desc":
-      return copy.sort((a, b) => b.price - a.price);
-    case "price_asc":
-      return copy.sort((a, b) => a.price - b.price);
-    case "featured":
-    default:
-      // Featured: best-seller → sale → new → rest, then by id
-      const order = { "best-seller": 0, sale: 1, new: 2, none: 3 } as const;
-      return copy.sort((a, b) => {
-        const ao = order[(a.badge ?? "none") as keyof typeof order] ?? 3;
-        const bo = order[(b.badge ?? "none") as keyof typeof order] ?? 3;
-        return ao !== bo ? ao - bo : a.id - b.id;
-      });
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Active-filter badge helpers
+// Active-filter badge builder
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface ActiveBadge {
   label: string;
-  /** ParsedQuery after removing this filter */
   nextQuery: ParsedQuery;
 }
 
@@ -115,7 +53,7 @@ function buildActiveBadges(parsed: ParsedQuery): ActiveBadge[] {
     const opt = GENDER_OPTIONS.find((o) => o.slug === slug);
     if (opt)
       badges.push({
-        label: opt.label,
+        label:     opt.label,
         nextQuery: toggleFilterValue(parsed, "gender", slug),
       });
   }
@@ -124,7 +62,7 @@ function buildActiveBadges(parsed: ParsedQuery): ActiveBadge[] {
     const col = COLOR_OPTIONS.find((c) => c.slug === slug);
     if (col)
       badges.push({
-        label: col.name,
+        label:     col.name,
         nextQuery: toggleFilterValue(parsed, "color", slug),
       });
   }
@@ -133,7 +71,7 @@ function buildActiveBadges(parsed: ParsedQuery): ActiveBadge[] {
     const sz = SIZE_OPTIONS.find((s) => s.slug === slug);
     if (sz)
       badges.push({
-        label: `Size: ${sz.label}`,
+        label:     `Size: ${sz.label}`,
         nextQuery: toggleFilterValue(parsed, "size", slug),
       });
   }
@@ -147,7 +85,7 @@ function buildActiveBadges(parsed: ParsedQuery): ActiveBadge[] {
           : r.max === parsed.priceMax)
     );
     badges.push({
-      label: range?.label ?? "Price range",
+      label:     range?.label ?? "Price range",
       nextQuery: setPriceRange(parsed, undefined, undefined),
     });
   }
@@ -156,29 +94,188 @@ function buildActiveBadges(parsed: ParsedQuery): ActiveBadge[] {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Skeleton helpers (Suspense fallbacks)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function FilterSkeleton() {
+  return (
+    <aside className="hidden lg:block w-56 flex-shrink-0">
+      <div className="space-y-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="h-6 bg-light-300 animate-pulse rounded-sm" />
+        ))}
+      </div>
+    </aside>
+  );
+}
+
+function SortSkeleton() {
+  return <div className="w-36 h-8 bg-light-300 animate-pulse rounded-sm" />;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Pagination component
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface PaginationProps {
+  page: number;
+  totalPages: number;
+  parsed: ParsedQuery;
+}
+
+function Pagination({ page, totalPages, parsed }: PaginationProps) {
+  if (totalPages <= 1) return null;
+
+  const prevQuery = buildQueryString({ ...parsed, page: page - 1 });
+  const nextQuery = buildQueryString({ ...parsed, page: page + 1 });
+
+  // Show up to 5 page buttons centred around the current page
+  const delta = 2;
+  const start = Math.max(1, page - delta);
+  const end   = Math.min(totalPages, page + delta);
+  const pageNumbers = Array.from({ length: end - start + 1 }, (_, i) => start + i);
+
+  return (
+    <nav
+      aria-label="Pagination"
+      className="flex items-center justify-center gap-1 mt-12"
+    >
+      {/* Previous */}
+      {page > 1 ? (
+        <Link
+          href={`/products${prevQuery ? `?${prevQuery}` : ""}`}
+          aria-label="Previous page"
+          className="
+            px-3 py-1.5 rounded-sm border border-light-400
+            text-caption text-dark-700
+            hover:border-dark-500 hover:text-dark-900 transition-colors
+            focus:outline-none focus-visible:ring-1 focus-visible:ring-dark-900
+          "
+        >
+          ←
+        </Link>
+      ) : (
+        <span className="px-3 py-1.5 rounded-sm border border-light-300 text-caption text-dark-500 cursor-not-allowed">
+          ←
+        </span>
+      )}
+
+      {/* Page numbers */}
+      {start > 1 && (
+        <>
+          <Link
+            href={`/products${buildQueryString({ ...parsed, page: 1 }) ? `?${buildQueryString({ ...parsed, page: 1 })}` : ""}`}
+            className="px-3 py-1.5 rounded-sm border border-light-400 text-caption text-dark-700 hover:border-dark-500 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-dark-900"
+          >
+            1
+          </Link>
+          {start > 2 && <span className="px-1 text-dark-500 text-caption">…</span>}
+        </>
+      )}
+
+      {pageNumbers.map((p) => {
+        const q = buildQueryString({ ...parsed, page: p });
+        return p === page ? (
+          <span
+            key={p}
+            aria-current="page"
+            className="px-3 py-1.5 rounded-sm bg-dark-900 text-light-100 text-caption font-medium"
+          >
+            {p}
+          </span>
+        ) : (
+          <Link
+            key={p}
+            href={`/products${q ? `?${q}` : ""}`}
+            className="px-3 py-1.5 rounded-sm border border-light-400 text-caption text-dark-700 hover:border-dark-500 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-dark-900"
+          >
+            {p}
+          </Link>
+        );
+      })}
+
+      {end < totalPages && (
+        <>
+          {end < totalPages - 1 && (
+            <span className="px-1 text-dark-500 text-caption">…</span>
+          )}
+          <Link
+            href={`/products${buildQueryString({ ...parsed, page: totalPages }) ? `?${buildQueryString({ ...parsed, page: totalPages })}` : ""}`}
+            className="px-3 py-1.5 rounded-sm border border-light-400 text-caption text-dark-700 hover:border-dark-500 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-dark-900"
+          >
+            {totalPages}
+          </Link>
+        </>
+      )}
+
+      {/* Next */}
+      {page < totalPages ? (
+        <Link
+          href={`/products${nextQuery ? `?${nextQuery}` : ""}`}
+          aria-label="Next page"
+          className="
+            px-3 py-1.5 rounded-sm border border-light-400
+            text-caption text-dark-700
+            hover:border-dark-500 hover:text-dark-900 transition-colors
+            focus:outline-none focus-visible:ring-1 focus-visible:ring-dark-900
+          "
+        >
+          →
+        </Link>
+      ) : (
+        <span className="px-3 py-1.5 rounded-sm border border-light-300 text-caption text-dark-500 cursor-not-allowed">
+          →
+        </span>
+      )}
+    </nav>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Product card skeleton (loading state)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function CardSkeleton() {
+  return (
+    <div className="flex flex-col gap-2 animate-pulse">
+      <div className="aspect-square w-full bg-light-300 rounded-sm" />
+      <div className="h-4 bg-light-300 rounded-sm w-3/4" />
+      <div className="h-3 bg-light-300 rounded-sm w-1/2" />
+      <div className="h-3 bg-light-300 rounded-sm w-1/3" />
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Page (server component)
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Next.js 16: searchParams is a Promise
 interface ProductsPageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
-  // Await the searchParams promise (Next.js 16 requirement)
+  // Next.js 16: searchParams is a Promise
   const rawParams = await searchParams;
-  const parsed    = parseSearchParams(rawParams);
 
-  const filtered = applyFilters(MOCK_PRODUCTS, parsed);
-  const sorted   = applySort(filtered, parsed.sort);
+  // Parse URL state (used for UI logic and badge rendering)
+  const parsed      = parseSearchParams(rawParams);
+  // Convert to DB query shape
+  const queryParams = parseFilterParams(rawParams);
 
-  const activeBadges   = buildActiveBadges(parsed);
-  const filtersActive  = hasActiveFilters(parsed);
+  // Fetch data — server action, single DB round-trip
+  const result = await getAllProducts(queryParams);
+
+  const { products: productList, totalCount, page, totalPages } = result;
+
+  const activeBadges  = buildActiveBadges(parsed);
+  const filtersActive = hasActiveFilters(parsed);
 
   // Heading helper
-  const genderLabel = parsed.gender.length === 1
-    ? GENDER_OPTIONS.find((g) => g.slug === parsed.gender[0])?.label
-    : undefined;
+  const genderLabel =
+    parsed.gender.length === 1
+      ? GENDER_OPTIONS.find((g) => g.slug === parsed.gender[0])?.label
+      : undefined;
 
   const heading = genderLabel ? `${genderLabel}'s Shoes` : "All Products";
 
@@ -210,12 +307,12 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
           <h1 className="text-heading-3 font-medium text-dark-900">
             {heading}
             <span className="ml-2 text-dark-500 font-normal text-body">
-              ({sorted.length})
+              ({totalCount})
             </span>
           </h1>
 
-          {/* Sort — client component, wrapped in Suspense */}
-          <Suspense fallback={<div className="w-36 h-8 bg-light-300 animate-pulse rounded-sm" />}>
+          {/* Sort — client component */}
+          <Suspense fallback={<SortSkeleton />}>
             <Sort />
           </Suspense>
         </div>
@@ -252,7 +349,6 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             );
           })}
 
-          {/* Clear all */}
           <Link
             href="/products"
             className="
@@ -266,51 +362,38 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         </div>
       )}
 
-      {/* ── Main layout: sidebar + grid ────────────────────────────────── */}
+      {/* ── Layout: sidebar + grid ──────────────────────────────────────── */}
       <div className="flex gap-8 items-start">
 
-        {/* Filters — client component, Suspense required for useSearchParams */}
-        <Suspense
-          fallback={
-            <aside className="hidden lg:block w-56 flex-shrink-0">
-              <div className="space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-6 bg-light-300 animate-pulse rounded-sm" />
-                ))}
-              </div>
-            </aside>
-          }
-        >
-          <Filters totalCount={sorted.length} />
+        {/* Desktop sidebar */}
+        <Suspense fallback={<FilterSkeleton />}>
+          <Filters totalCount={totalCount} />
         </Suspense>
 
-        {/* Product grid */}
+        {/* Main content */}
         <div className="flex-1 min-w-0">
-          {/* Mobile filter trigger area */}
-          <div className="flex items-center justify-between lg:hidden mb-4">
-            <Suspense fallback={
-              <div className="w-24 h-8 bg-light-300 animate-pulse rounded-sm" />
-            }>
-              <Filters totalCount={sorted.length} />
-            </Suspense>
 
-            <Suspense fallback={
-              <div className="w-36 h-8 bg-light-300 animate-pulse rounded-sm" />
-            }>
+          {/* Mobile: filter trigger + sort (inline, above the grid) */}
+          <div className="flex items-center justify-between lg:hidden mb-4">
+            <Suspense fallback={<div className="w-24 h-8 bg-light-300 animate-pulse rounded-sm" />}>
+              <Filters totalCount={totalCount} />
+            </Suspense>
+            <Suspense fallback={<SortSkeleton />}>
               <Sort />
             </Suspense>
           </div>
 
-          {sorted.length === 0 ? (
-            /* ── Empty state ────────────────────────────────────────────── */
+          {productList.length === 0 ? (
+            /* ── Empty state ──────────────────────────────────────────── */
             <div className="flex flex-col items-center justify-center py-24 text-center">
               <div className="mb-4 text-5xl" aria-hidden="true">👟</div>
               <h2 className="text-heading-3 font-medium text-dark-900 mb-2">
                 No products found
               </h2>
               <p className="text-body text-dark-700 mb-6 max-w-sm">
-                Try adjusting or clearing your filters to find what you&apos;re
-                looking for.
+                {parsed.search
+                  ? `No results for "${parsed.search}". Try different keywords or clear filters.`
+                  : "Try adjusting or clearing your filters to find what you're looking for."}
               </p>
               <Link
                 href="/products"
@@ -324,36 +407,52 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
               </Link>
             </div>
           ) : (
-            /* ── Product grid ───────────────────────────────────────────── */
-            <ul
-              role="list"
-              aria-label="Products"
-              className="
-                grid gap-x-4 gap-y-10
-                grid-cols-2
-                sm:grid-cols-2
-                md:grid-cols-3
-                lg:grid-cols-3
-                xl:grid-cols-4
-                lg:gap-x-6
-              "
-            >
-              {sorted.map((product) => (
-                <li key={product.id}>
-                  <Card
-                    id={product.id}
-                    name={product.name}
-                    category={product.category}
-                    colourCount={product.colors.length}
-                    price={product.price}
-                    originalPrice={product.originalPrice}
-                    imageSrc={product.imageSrc}
-                    badge={product.badge ?? "none"}
-                    discountLabel={product.discountLabel}
-                  />
-                </li>
-              ))}
-            </ul>
+            <>
+              {/* ── Product grid ─────────────────────────────────────── */}
+              <ul
+                role="list"
+                aria-label="Products"
+                className="
+                  grid gap-x-4 gap-y-10
+                  grid-cols-2
+                  md:grid-cols-3
+                  xl:grid-cols-4
+                  lg:gap-x-6
+                "
+              >
+                {productList.map((product) => (
+                  <li key={product.id}>
+                    <Card
+                      id={product.id}
+                      name={product.name}
+                      category={`${product.genderLabel}'s ${product.category}`}
+                      colourCount={product.colourCount}
+                      price={product.price}
+                      originalPrice={product.originalPrice}
+                      imageSrc={product.imageSrc}
+                      badge={product.badge}
+                      discountLabel={product.discountLabel}
+                    />
+                  </li>
+                ))}
+              </ul>
+
+              {/* ── Pagination ───────────────────────────────────────── */}
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                parsed={parsed}
+              />
+
+              {/* ── Result count footer ──────────────────────────────── */}
+              {totalCount > 0 && (
+                <p className="mt-6 text-center text-footnote text-dark-500">
+                  Showing{" "}
+                  {Math.min((page - 1) * parsed.limit + 1, totalCount)}–
+                  {Math.min(page * parsed.limit, totalCount)} of {totalCount} products
+                </p>
+              )}
+            </>
           )}
         </div>
       </div>

@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import Link from "next/link";
 import { useCartStore } from "@/store/useCartStore";
 
 export type BadgeVariant = "best-seller" | "sale" | "new" | "none";
@@ -64,89 +65,94 @@ export default function Card({
 }: CardProps) {
   const addToCart = useCartStore((s) => s.addToCart);
 
-  const handleClick = onClick
+  const handleAddToCart = onClick
     ? onClick
-    : () => addToCart({ id: String(id), name, price, imageUrl: imageSrc });
+    : () => addToCart({ id: Number(id), name, price, imageUrl: imageSrc });
 
   const hasDiscount = originalPrice !== undefined && originalPrice > price;
 
   return (
-    <article
-      className="group flex flex-col cursor-pointer"
-      onClick={handleClick}
-    >
-      {/* Image container */}
-      <div className="relative aspect-square w-full overflow-hidden bg-light-200">
-        {/* Badge */}
-        {badge !== "none" && (
-          <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
-            <span
-              className={`inline-block rounded-sm px-2 py-0.5 text-footnote font-medium ${BADGE_STYLES[badge]}`}
+    <article className="group flex flex-col">
+      {/* Entire card links to product detail page */}
+      <Link
+        href={`/products/${id}`}
+        className="flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-dark-900 focus-visible:ring-offset-2 rounded-sm"
+        aria-label={`View ${name}`}
+      >
+        {/* Image container */}
+        <div className="relative aspect-square w-full overflow-hidden bg-light-200 cursor-pointer">
+          {/* Badge */}
+          {badge !== "none" && (
+            <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
+              <span
+                className={`inline-block rounded-sm px-2 py-0.5 text-footnote font-medium ${BADGE_STYLES[badge]}`}
+              >
+                {BADGE_LABELS[badge]}
+              </span>
+              {badge === "sale" && discountLabel && (
+                <span className="inline-block rounded-sm bg-orange px-2 py-0.5 text-footnote font-medium text-light-100">
+                  {discountLabel}
+                </span>
+              )}
+            </div>
+          )}
+
+          <Image
+            src={imageSrc}
+            alt={imageAlt ?? name}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover object-center transition-transform duration-500 ease-out group-hover:scale-105"
+          />
+
+          {/* Hover CTA overlay — stopPropagation keeps it from triggering the Link */}
+          <div className="absolute inset-x-0 bottom-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out p-3">
+            <button
+              aria-label={`Add ${name} to cart`}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleAddToCart();
+              }}
+              className="w-full rounded-sm bg-dark-900 py-2.5 text-caption font-medium text-light-100 hover:bg-black transition-colors duration-150"
             >
-              {BADGE_LABELS[badge]}
+              Add to Cart
+            </button>
+          </div>
+        </div>
+
+        {/* Info */}
+        <div className="mt-3 flex flex-col gap-0.5">
+          {/* Name */}
+          <h3 className="text-body-medium font-medium text-dark-900 group-hover:underline line-clamp-1">
+            {name}
+          </h3>
+
+          {/* Category */}
+          <p className="text-caption text-dark-700">{category}</p>
+
+          {/* Colour count */}
+          {colourCount !== undefined && (
+            <p className="text-footnote text-dark-500">
+              {colourCount} {colourCount === 1 ? "Colour" : "Colours"}
+            </p>
+          )}
+
+          {/* Price row */}
+          <div className="mt-1 flex items-center gap-2">
+            <span
+              className={`text-body-medium font-medium ${hasDiscount ? "text-red" : "text-dark-900"}`}
+            >
+              {formatPrice(price)}
             </span>
-            {badge === "sale" && discountLabel && (
-              <span className="inline-block rounded-sm bg-orange px-2 py-0.5 text-footnote font-medium text-light-100">
-                {discountLabel}
+            {hasDiscount && (
+              <span className="text-caption text-dark-500 line-through">
+                {formatPrice(originalPrice!)}
               </span>
             )}
           </div>
-        )}
-
-        <Image
-          src={imageSrc}
-          alt={imageAlt ?? name}
-          fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className="object-cover object-center transition-transform duration-500 ease-out group-hover:scale-105"
-        />
-
-        {/* Hover CTA overlay */}
-        <div className="absolute inset-x-0 bottom-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out p-3">
-          <button
-            aria-label={`Add ${name} to cart`}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleClick();
-            }}
-            className="w-full rounded-sm bg-dark-900 py-2.5 text-caption font-medium text-light-100 hover:bg-black transition-colors duration-150"
-          >
-            Add to Cart
-          </button>
         </div>
-      </div>
-
-      {/* Info */}
-      <div className="mt-3 flex flex-col gap-0.5">
-        {/* Name */}
-        <h3 className="text-body-medium font-medium text-dark-900 group-hover:underline line-clamp-1">
-          {name}
-        </h3>
-
-        {/* Category */}
-        <p className="text-caption text-dark-700">{category}</p>
-
-        {/* Colour count */}
-        {colourCount !== undefined && (
-          <p className="text-footnote text-dark-500">
-            {colourCount} {colourCount === 1 ? "Colour" : "Colours"}
-          </p>
-        )}
-
-        {/* Price row */}
-        <div className="mt-1 flex items-center gap-2">
-          <span
-            className={`text-body-medium font-medium ${hasDiscount ? "text-red" : "text-dark-900"}`}
-          >
-            {formatPrice(price)}
-          </span>
-          {hasDiscount && (
-            <span className="text-caption text-dark-500 line-through">
-              {formatPrice(originalPrice!)}
-            </span>
-          )}
-        </div>
-      </div>
+      </Link>
     </article>
   );
 }

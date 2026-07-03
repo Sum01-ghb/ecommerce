@@ -15,6 +15,13 @@
       "when": 1782956758050,
       "tag": "0001_watery_mesmero",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782977677752,
+      "tag": "0002_striped_puppet_master",
+      "breakpoints": true
     }
   ]
 }

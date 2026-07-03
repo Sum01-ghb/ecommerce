@@ -1,5 +1,6 @@
 /**
- * query.ts — URL query parameter helpers for the products filter/sort UI.
+ * query.ts — URL query parameter helpers for the products filter/sort UI
+ * and Drizzle query builders.
  *
  * All functions are pure (no side effects) and use `query-string` for
  * consistent parsing and serialisation.
@@ -9,7 +10,7 @@
  *  • Multi-value params (gender, color, size) are stored as comma-separated
  *    strings so the URL stays readable:
  *      ?gender=men,women&color=red,black&size=us-8,us-9
- *  • Single-value params (sort, page) are plain strings.
+ *  • Single-value params (sort, page, search) are plain strings.
  *  • Page resets to 1 whenever filters or sort change.
  */
 
@@ -36,6 +37,25 @@ export interface ProductFilters {
 export interface ParsedQuery extends ProductFilters {
   sort: SortOption;
   page: number;
+  limit: number;
+  search?: string;
+}
+
+/**
+ * Structured filter object consumed by `getAllProducts`.
+ * Mirrors `ParsedQuery` but uses explicit field names that map
+ * directly to Drizzle query conditions.
+ */
+export interface ProductQueryParams {
+  genderSlugs: string[];
+  colorSlugs: string[];
+  sizeSlugs: string[];
+  priceMin?: number;
+  priceMax?: number;
+  sortBy: SortOption;
+  page: number;
+  limit: number;
+  search?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -44,9 +64,10 @@ export interface ParsedQuery extends ProductFilters {
 
 export const DEFAULT_SORT: SortOption = "featured";
 export const DEFAULT_PAGE = 1;
+export const DEFAULT_LIMIT = 24;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Parsing
+// Parsing helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -73,14 +94,15 @@ function splitParam(value: string | null | undefined): string[] {
 export function parseSearchParams(
   params: Record<string, string | string[] | undefined>
 ): ParsedQuery {
-  const raw = qs.stringify(params, { skipNull: true, skipEmptyString: true });
+  const raw    = qs.stringify(params, { skipNull: true, skipEmptyString: true });
   const parsed = qs.parse(raw);
 
   const sort = isValidSort(String(parsed.sort ?? ""))
     ? (parsed.sort as SortOption)
     : DEFAULT_SORT;
 
-  const page = parseInt(String(parsed.page ?? "1"), 10);
+  const page  = parseInt(String(parsed.page  ?? "1"), 10);
+  const limit = parseInt(String(parsed.limit ?? String(DEFAULT_LIMIT)), 10);
 
   const priceMin = parsed.price_min
     ? parseFloat(String(parsed.price_min))
@@ -89,14 +111,52 @@ export function parseSearchParams(
     ? parseFloat(String(parsed.price_max))
     : undefined;
 
+  const search = parsed.search ? String(parsed.search).trim() : undefined;
+
   return {
-    gender: splitParam(String(parsed.gender ?? "")),
-    color: splitParam(String(parsed.color ?? "")),
-    size: splitParam(String(parsed.size ?? "")),
+    gender:   splitParam(String(parsed.gender ?? "")),
+    color:    splitParam(String(parsed.color  ?? "")),
+    size:     splitParam(String(parsed.size   ?? "")),
     priceMin: isNaN(priceMin as number) ? undefined : priceMin,
     priceMax: isNaN(priceMax as number) ? undefined : priceMax,
     sort,
-    page: isNaN(page) || page < 1 ? DEFAULT_PAGE : page,
+    page:  isNaN(page)  || page  < 1 ? DEFAULT_PAGE  : page,
+    limit: isNaN(limit) || limit < 1 ? DEFAULT_LIMIT : Math.min(limit, 100),
+    search: search || undefined,
+  };
+}
+
+/**
+ * Parses URL search params and returns a `ProductQueryParams` object
+ * suitable for direct consumption by `getAllProducts`.
+ *
+ * This is the canonical entry-point for server components — it maps URL
+ * slugs to the exact shape the DB action expects.
+ */
+export function parseFilterParams(
+  searchParams: Record<string, string | string[] | undefined>
+): ProductQueryParams {
+  const parsed = parseSearchParams(searchParams);
+  return buildProductQueryObject(parsed);
+}
+
+/**
+ * Converts a `ParsedQuery` (URL state) into a `ProductQueryParams`
+ * (DB query input). Pure function, no side effects.
+ */
+export function buildProductQueryObject(
+  parsed: ParsedQuery
+): ProductQueryParams {
+  return {
+    genderSlugs: parsed.gender,
+    colorSlugs:  parsed.color,
+    sizeSlugs:   parsed.size,
+    priceMin:    parsed.priceMin,
+    priceMax:    parsed.priceMax,
+    sortBy:      parsed.sort,
+    page:        parsed.page,
+    limit:       parsed.limit,
+    search:      parsed.search,
   };
 }
 
@@ -115,12 +175,14 @@ export function buildQueryString(query: Partial<ParsedQuery>): string {
   const params: Record<string, string | undefined> = {};
 
   if (query.gender?.length) params.gender = query.gender.join(",");
-  if (query.color?.length) params.color = query.color.join(",");
-  if (query.size?.length) params.size = query.size.join(",");
+  if (query.color?.length)  params.color  = query.color.join(",");
+  if (query.size?.length)   params.size   = query.size.join(",");
   if (query.priceMin !== undefined) params.price_min = String(query.priceMin);
   if (query.priceMax !== undefined) params.price_max = String(query.priceMax);
   if (query.sort && query.sort !== DEFAULT_SORT) params.sort = query.sort;
-  if (query.page && query.page > 1) params.page = String(query.page);
+  if (query.page  && query.page  > 1) params.page = String(query.page);
+  if (query.limit && query.limit !== DEFAULT_LIMIT) params.limit = String(query.limit);
+  if (query.search) params.search = query.search;
 
   return qs.stringify(params, {
     skipNull: true,
@@ -163,6 +225,7 @@ export function setSort(
 
 /**
  * Sets a price range filter and resets page to 1.
+ * Prices are in cents to match the Card component convention.
  */
 export function setPriceRange(
   current: ParsedQuery,
@@ -177,24 +240,26 @@ export function setPriceRange(
  */
 export function clearAllFilters(current: ParsedQuery): ParsedQuery {
   return {
-    gender: [],
-    color: [],
-    size: [],
+    gender:   [],
+    color:    [],
+    size:     [],
     priceMin: undefined,
     priceMax: undefined,
-    sort: current.sort,
-    page: DEFAULT_PAGE,
+    sort:     current.sort,
+    page:     DEFAULT_PAGE,
+    limit:    current.limit,
+    search:   undefined,
   };
 }
 
 /**
- * Returns true when no filter is active.
+ * Returns true when at least one filter is active.
  */
 export function hasActiveFilters(filters: ProductFilters): boolean {
   return (
     filters.gender.length > 0 ||
-    filters.color.length > 0 ||
-    filters.size.length > 0 ||
+    filters.color.length  > 0 ||
+    filters.size.length   > 0 ||
     filters.priceMin !== undefined ||
     filters.priceMax !== undefined
   );
@@ -215,12 +280,10 @@ export function isValidSort(value: string): value is SortOption {
   return VALID_SORTS.includes(value as SortOption);
 }
 
-/**
- * Human-readable labels for sort options.
- */
+/** Human-readable labels for sort options. */
 export const SORT_LABELS: Record<SortOption, string> = {
-  featured: "Featured",
-  newest: "Newest",
+  featured:   "Featured",
+  newest:     "Newest",
   price_desc: "Price: High → Low",
-  price_asc: "Price: Low → High",
+  price_asc:  "Price: Low → High",
 };
