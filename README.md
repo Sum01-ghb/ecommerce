@@ -9,11 +9,6 @@
 
 ## <a name="introduction">✨ Introduction</a>
 
-**Name:** Sumit Patra
-
-**Intern ID:** CITS5134
-
-**Domain:** Full-Stack Web Development
 
 Nike-style eCommerce built with  Next.js, Drizzle ORM, and Better Auth. This project includes sleek product pages powered by Next.js 16, TypeScript, and TailwindCSS. The backend runs on Neon PostgreSQL with Drizzle ORM, authentication is handled with Better Auth, and Zustand manages state — all packaged in a clean, modular UI.
 
